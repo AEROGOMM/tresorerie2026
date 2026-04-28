@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trésorerie — Saisie Multi-Services</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg:#0D1117; --surface:#161B22; --surface2:#1C2128; --surface3:#21262D;
+    --border:#30363D; --border2:#484F58; --text:#E6EDF3; --muted:#8B949E; --accent:#58A6FF;
+    --prgo:#2E8BC0; --prgo-bg:#0D2D45;
+    --ls:#3FB27F;   --ls-bg:#0D2D1E;
+    --lm:#D4A017;   --lm-bg:#2D2200;
+    --lmpm:#A87DC4; --lmpm-bg:#241535;
+    --vm:#2EC4B6;   --vm-bg:#0D2A28;
+    --fg:#E07B39;   --fg-bg:#2D1800;
+    --rd:#E05252;   --rd-bg:#2D0C0C;
+    --income:#3FB27F; --expense:#E05252; --radius:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;
+    display:flex;align-items:center;justify-content:space-between;height:60px;
+    position:sticky;top:0;z-index:100;}
+  .app-logo{font-size:16px;font-weight:800;letter-spacing:-.5px;}
+  .app-logo span{color:var(--accent);}
+  .header-actions{display:flex;gap:10px;align-items:center;}
+  .layout{display:flex;min-height:calc(100vh - 60px);}
+  .sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+    padding:16px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;}
+  .sidebar-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);
+    padding:8px 16px 4px;text-transform:uppercase;}
+  .month-btn{display:flex;align-items:center;justify-content:space-between;width:100%;
+    padding:8px 16px;background:none;border:none;cursor:pointer;color:var(--muted);
+    font-family:'Syne',sans-serif;font-size:13px;font-weight:600;transition:all .15s;
+    border-left:3px solid transparent;}
+  .month-btn:hover{color:var(--text);background:var(--surface2);}
+  .month-btn.active{color:var(--accent);background:var(--surface2);border-left-color:var(--accent);}
+  .month-btn.ls-btn.active{color:var(--ls);border-left-color:var(--ls);}
+  .month-badge{font-family:'DM Mono',monospace;font-size:10px;background:var(--surface3);
+    border-radius:10px;padding:1px 7px;color:var(--muted);}
+  .month-btn.active .month-badge{background:var(--accent);color:#000;}
+  .month-btn.ls-btn.active .month-badge{background:var(--ls);color:#000;}
+  .month-btn.dc-btn.active{color:var(--rd);border-left-color:var(--rd);}
+  .month-btn.dc-btn.active .month-badge{background:var(--rd);color:#fff;}
+  .dc-banner{background:linear-gradient(135deg,#2D0C0C,#1F2D0C);border:1px solid var(--rd);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+  .dc-banner-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;}
+  .dc-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+  .dc-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+  .dc-section-title{font-size:13px;font-weight:700;}
+  .dc-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;}
+  .dc-tag-monthly{background:#2D0C0C;color:var(--rd);}
+  .dc-tag-quarterly{background:#2D1800;color:var(--fg);}
+  .dc-tag-debt{background:#241535;color:var(--lmpm);}
+  .progress-bar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:4px;}
+  .progress-fill{height:100%;border-radius:3px;transition:width .3s;}
+  .main{flex:1;padding:24px;overflow:auto;}
+  .page-title{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+    color:var(--muted);margin-bottom:12px;margin-top:24px;}
+  .service-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+  .svc-chip{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+    letter-spacing:.5px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;}
+  .svc-chip.active{border-color:currentColor;}
+  .svc-chip[data-svc="PRGO"]{color:var(--prgo);background:var(--prgo-bg);}
+  .svc-chip[data-svc="LS"]{color:var(--ls);background:var(--ls-bg);}
+  .svc-chip[data-svc="LM"]{color:var(--lm);background:var(--lm-bg);}
+  .svc-chip[data-svc="LMPM"]{color:var(--lmpm);background:var(--lmpm-bg);}
+  .svc-chip[data-svc="VM"]{color:var(--vm);background:var(--vm-bg);}
+  .svc-chip[data-svc="FG"]{color:var(--fg);background:var(--fg-bg);}
+  .svc-chip[data-svc="RD"]{color:var(--rd);background:var(--rd-bg);}
+  .svc-chip[data-svc="ALL"]{color:var(--accent);background:#0D2040;}
+  .add-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;margin-bottom:20px;}
+  .add-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+    color:var(--muted);margin-bottom:12px;}
+  .form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+  .form-group{display:flex;flex-direction:column;gap:4px;}
+  .form-group label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+  .form-group input,.form-group select{background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 12px;
+    border-radius:var(--radius);outline:none;transition:border-color .15s;}
+  .form-group input:focus,.form-group select:focus{border-color:var(--accent);}
+  .form-group select option{background:var(--surface2);}
+  .type-toggle{display:flex;}
+  .type-btn{padding:8px 16px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;
+    cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);transition:all .15s;}
+  .type-btn:first-child{border-radius:var(--radius) 0 0 var(--radius);}
+  .type-btn:last-child{border-radius:0 var(--radius) var(--radius) 0;border-left:0;}
+  .type-btn.active-e{background:var(--income);color:#fff;border-color:var(--income);}
+  .type-btn.active-d{background:var(--expense);color:#fff;border-color:var(--expense);}
+  .btn{padding:8px 20px;border-radius:var(--radius);font-family:'Syne',sans-serif;font-size:13px;
+    font-weight:700;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-primary:hover{background:#79B8FF;}
+  .btn-success{background:var(--income);color:#fff;}
+  .btn-success:hover{filter:brightness(1.1);}
+  .btn-ls{background:var(--ls);color:#fff;}
+  .btn-ls:hover{filter:brightness(1.1);}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  .btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+  .btn-danger-sm{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px 6px;
+    border-radius:4px;font-size:12px;transition:all .15s;}
+  .btn-danger-sm:hover{color:var(--expense);background:var(--rd-bg);}
+  .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+  .stat-value{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;}
+  .stat-value.positive{color:var(--income);}
+  .stat-value.negative{color:var(--expense);}
+  .stat-value.neutral{color:var(--accent);}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+  .table-header-bar{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid var(--border);}
+  .table-title{font-size:13px;font-weight:700;}
+  .ops-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;}
+  thead th{background:var(--surface2);padding:9px 14px;font-size:10px;font-weight:700;
+    text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--surface2);}
+  tbody td{padding:9px 14px;font-size:13px;}
+  .td-date{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;}
+  .td-svc{font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 9px;border-radius:10px;display:inline-block;}
+  .td-amount{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:right;white-space:nowrap;}
+  .td-amount.e{color:var(--income);}
+  .td-amount.d{color:var(--expense);}
+  .type-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;}
+  .type-badge.e{background:#0D2D1E;color:var(--income);}
+  .type-badge.d{background:var(--rd-bg);color:var(--expense);}
+  .empty-state{text-align:center;padding:48px 24px;color:var(--muted);font-size:14px;}
+  .empty-icon{font-size:32px;margin-bottom:8px;}
+
+  /* ── LS Module ── */
+  .ls-banner{background:linear-gradient(135deg,#0D2D1E,#0D2040);border:1px solid var(--ls);
+    border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;
+    gap:24px;flex-wrap:wrap;}
+  .ls-banner-item{display:flex;flex-direction:column;gap:2px;}
+  .ls-banner-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .ls-banner-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--ls);}
+  .fact-alert{background:#2D2200;border:1px solid var(--lm);border-radius:var(--radius);
+    padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;}
+  .ls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px;}
+  .loc-card{background:var(--surface);border:1px solid #1A3A28;border-radius:10px;padding:16px;transition:border-color .2s;}
+  .loc-card:hover{border-color:var(--ls);}
+  .loc-card.inactive{opacity:.5;border-color:var(--border);}
+  .loc-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+  .loc-name{font-size:14px;font-weight:800;}
+  .loc-site{font-size:11px;color:var(--muted);margin-top:2px;}
+  .loc-status{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;}
+  .loc-status.active{background:#0D2D1E;color:var(--income);}
+  .loc-status.inactive{background:var(--surface3);color:var(--muted);}
+  .loc-details{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:12px;}
+  .loc-detail-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+  .loc-detail-val{font-family:'DM Mono',monospace;font-weight:500;}
+  .loc-billing{background:var(--surface2);border-radius:6px;padding:10px;margin-bottom:10px;}
+  .loc-billing-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ls);margin-bottom:6px;}
+  .billing-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:5px;}
+  .billing-row:last-child{margin-bottom:0;}
+  .bill-date{font-family:'DM Mono',monospace;color:var(--muted);}
+  .bill-amount{font-family:'DM Mono',monospace;font-weight:700;color:var(--income);}
+  .bill-status-btn{font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px;cursor:pointer;
+    border:none;font-family:'Syne',sans-serif;transition:all .15s;}
+  .bill-pending{background:#2D2200;color:var(--lm);}
+  .bill-pending:hover{background:var(--lm);color:#000;}
+  .bill-received{background:#0D2D1E;color:var(--income);cursor:default;}
+  .loc-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .loc-action-btn{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;
+    font-family:'Syne',sans-serif;border:1px solid;transition:all .15s;}
+  .totals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px;}
+  .svc-total-card{border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border);}
+  .svc-total-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .svc-total-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;}
+  .svc-total-row span:first-child{color:var(--muted);}
+  .svc-total-net{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;font-weight:700;font-size:13px;}
+  .export-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 20px;margin-top:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .export-info{flex:1;min-width:200px;}
+  .export-title{font-size:14px;font-weight:700;margin-bottom:2px;}
+  .export-sub{font-size:12px;color:var(--muted);}
+  .notif{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);
+    border-radius:var(--radius);padding:12px 18px;font-size:13px;font-weight:600;
+    transform:translateY(80px);opacity:0;transition:all .3s;z-index:200;}
+  .notif.show{transform:translateY(0);opacity:1;}
+  .notif.success{border-color:var(--income);color:var(--income);}
+  .notif.error{border-color:var(--expense);color:var(--expense);}
+  #loading-overlay{display:none;position:fixed;inset:0;background:rgba(13,17,23,.85);z-index:300;
+    align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+  #loading-overlay.show{display:flex;}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media(max-width:768px){.sidebar{display:none;}.main{padding:16px;}.form-row{flex-direction:column;}.stats-bar{grid-template-columns:1fr 1fr;}}
+
+  /* Drive sync */
+  .drive-bar{display:flex;align-items:center;gap:10px;padding:6px 16px;background:#0D1F0D;border-bottom:1px solid #1A3A1A;font-size:12px;}
+  .drive-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .drive-dot.ok{background:var(--income);}
+  .drive-dot.warn{background:var(--lm);}
+  .drive-dot.err{background:var(--rd);}
+  .drive-dot.idle{background:var(--border2);}
+  .drive-status{color:var(--muted);flex:1;}
+  .drive-config{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 0;max-width:520px;}
+  .drive-config-title{font-size:13px;font-weight:700;color:var(--ls);margin-bottom:12px;}
+  .sync-spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+</style>
+</head>
+<body>
+<div id="loading-overlay"><div class="spinner"></div><div style="color:var(--muted);font-size:14px">Génération…</div></div>
+<header class="app-header">
+  <div class="app-logo">Tréso<span>2026</span></div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" id="btn-drive-save" onclick="driveSave()" style="display:none">☁ Sauvegarder sur Drive</button>
+    <button class="btn btn-ghost" id="btn-drive-connect" onclick="driveConnect()">☁ Connecter Drive</button>
+    <button class="btn btn-ghost" onclick="exportData()">💾 Local</button>
+    <button class="btn btn-ghost" onclick="importData()">📂 Charger</button>
+    <button class="btn btn-success" onclick="generateExcel()">📊 Générer Excel</button>
+  </div>
+</header>
+<div class="drive-bar" id="drive-bar">
+  <div class="drive-dot idle" id="drive-dot"></div>
+  <span class="drive-status" id="drive-status">Drive non connecté — vos données restent locales</span>
+  <span id="drive-last-sync" style="font-size:11px;color:var(--muted)"></span>
+</div>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Navigation</div>
+    <button class="month-btn active" data-month="0" onclick="switchView('annual',this)">
+      Vue annuelle <span class="month-badge" id="badge-0">0</span>
+    </button>
+    <button class="month-btn ls-btn" data-month="ls" onclick="switchView('ls',this)">
+      🏠 Locations LS <span class="month-badge" id="badge-ls">0</span>
+    </button>
+    <button class="month-btn dc-btn" data-month="dc" onclick="switchView('dc',this)">
+      &#x1F4CB; Dettes &amp; Charges <span class="month-badge" id="badge-dc">0</span>
+    </button>
+    <div class="sidebar-label" style="margin-top:8px">Mois 2026</div>
+    <div id="month-nav"></div>
+  </aside>
+  <main class="main"><div id="page-content"></div></main>
+</div>
+<div id="notif" class="notif"></div>
+<input type="file" id="file-input" accept=".json" style="display:none" onchange="loadFile(event)">
+
+<script>
+const MONTHS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const SERVICES=[
+  {code:"PRGO",label:"Prestations Grand Ouest",color:"var(--prgo)",bg:"var(--prgo-bg)"},
+  {code:"LS",  label:"Location Site",          color:"var(--ls)",  bg:"var(--ls-bg)"},
+  {code:"LM",  label:"Location Matérielle",    color:"var(--lm)",  bg:"var(--lm-bg)"},
+  {code:"LMPM",label:"Prest. Le Mans/Perche/May",color:"var(--lmpm)",bg:"var(--lmpm-bg)"},
+  {code:"VM",  label:"Vente Matérielle",       color:"var(--vm)",  bg:"var(--vm-bg)"},
+  {code:"FG",  label:"Frais Généraux",         color:"var(--fg)",  bg:"var(--fg-bg)"},
+  {code:"RD",  label:"Remboursement Dettes",   color:"var(--rd)",  bg:"var(--rd-bg)"},
+];
+
+let data={};
+let lsData={locataires:[],factures:{}};
+let dcData={
+  dettes:[],     // [{id,nom,credancier,montantTotal,montantPaye,mensualite,dateDebut,notes}]
+  charges:[]     // [{id,nom,type:'mensuelle'|'trimestrielle'|'annuelle',montant,mois:[],organisme,notes,historique:[{mois,paye,date}]}]
+};
+for(let m=1;m<=12;m++){data[m]={};SERVICES.forEach(s=>data[m][s.code]=[]);}
+
+let view="annual"; // "annual"|"ls"|1..12
+let currentSvc="ALL";
+let formType="E";
+let lsAddMode=false;
+let dcAddMode=null; // null|'dette'|'charge'
+let dcSection='all'; // 'all'|'dettes'|'mensuelles'|'trimestrielles'
+let lsMonthKey=`2026-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+
+function initNav(){
+  const nav=document.getElementById("month-nav");
+  MONTHS.forEach((m,i)=>{
+    nav.innerHTML+=`<button class="month-btn" data-month="${i+1}" onclick="switchView(${i+1},this)">${m} <span class="month-badge" id="badge-${i+1}">0</span></button>`;
+  });
+  render();
+}
+
+function updateBadges(){
+  for(let m=1;m<=12;m++){
+    let t=0;SERVICES.forEach(s=>t+=(data[m][s.code]||[]).length);
+    const b=document.getElementById(`badge-${m}`);if(b)b.textContent=t;
+  }
+  let g=0;for(let m=1;m<=12;m++)SERVICES.forEach(s=>g+=(data[m][s.code]||[]).length);
+  const b0=document.getElementById("badge-0");if(b0)b0.textContent=g;
+  const bls=document.getElementById("badge-ls");
+  if(bls)bls.textContent=lsData.locataires.filter(l=>l.actif).length;
+  const bdc=document.getElementById("badge-dc");
+  if(bdc)bdc.textContent=dcData.dettes.length+dcData.charges.length;
+}
+
+function switchView(v,btn){
+  view=v;lsAddMode=false;
+  document.querySelectorAll(".month-btn").forEach(b=>b.classList.remove("active"));
+  if(btn)btn.classList.add("active");
+  render();
+}
+
+function render(){
+  if(view==="annual")renderAnnual();
+  else if(view==="ls")renderLS();
+  else if(view==="dc")renderDC();
+  else renderMonth(view);
+}
+
+// ══════════════════════════════════════════════
+// LS DASHBOARD
+// ══════════════════════════════════════════════
+function renderLS(){
+  const actifs=lsData.locataires.filter(l=>l.actif);
+  const total15=actifs.reduce((s,l)=>s+parseFloat(l.loyer15||0),0);
+  const total25=actifs.reduce((s,l)=>s+parseFloat(l.loyer25||0),0);
+  const alertes=getPending(lsMonthKey);
+
+  let h=`<div class="page-title">🏠 Locations — Tableau de bord LS</div>
+  <div class="page-sub">${actifs.length} locataire(s) actif(s) · Facturation les 15 et 25 du mois</div>
+  <div class="ls-banner">
+    <div class="ls-banner-item"><span class="ls-banner-label">Actifs</span><span class="ls-banner-val">${actifs.length}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Total 15e</span><span class="ls-banner-val">${fmt(total15)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Total 25e</span><span class="ls-banner-val">${fmt(total25)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Mensuel théorique</span><span class="ls-banner-val">${fmt(total15+total25)}</span></div>
+    <div style="margin-left:auto"><button class="btn btn-ls" onclick="lsAddMode=true;render()">+ Nouveau locataire</button></div>
+  </div>`;
+
+  if(alertes.length>0) h+=`<div class="fact-alert">⏰ &nbsp;<strong>${alertes.length} loyer(s) en attente d'encaissement</strong> ce mois-ci — ${alertes.map(a=>`${a.nom} (${a.echeance}e : ${fmt(a.montant)})`).join(', ')}</div>`;
+
+  if(lsAddMode) h+=`
+  <div class="add-card" style="border-color:var(--ls)">
+    <div class="add-card-title" style="color:var(--ls)">+ Nouveau locataire</div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1;min-width:170px"><label>Nom / Raison sociale</label><input type="text" id="ls-nom" placeholder="Nom du locataire"></div>
+      <div class="form-group" style="flex:1;min-width:140px"><label>Site / Emplacement</label><input type="text" id="ls-site" placeholder="Ex: Site A – Box 3"></div>
+      <div class="form-group"><label>Loyer 15e (€)</label><input type="number" id="ls-l15" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>Loyer 25e (€)</label><input type="number" id="ls-l25" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>Date d'entrée</label><input type="date" id="ls-entree" value="${todayStr()}" style="width:145px"></div>
+      <div class="form-group" style="flex:1;min-width:160px"><label>Notes (caution…)</label><input type="text" id="ls-notes" placeholder="Informations complémentaires"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-ls" onclick="addLocataire()">✓ Enregistrer</button>
+      <button class="btn btn-ghost" onclick="lsAddMode=false;render()">Annuler</button>
+    </div>
+  </div>`;
+
+  // Sélecteur mois facturation
+  h+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px">Mois de facturation :</span>
+    <select id="ls-msel" onchange="lsMonthKey=this.value;render()"
+      style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:6px 10px;border-radius:var(--radius);outline:none">
+      ${MONTHS.map((mn,i)=>{const k=`2026-${String(i+1).padStart(2,'0')}`;return`<option value="${k}" ${k===lsMonthKey?'selected':''}>${mn} 2026</option>`;}).join('')}
+    </select>
+    <button class="btn btn-ls" style="padding:6px 16px;font-size:12px" onclick="genererMois()">⚡ Générer factures du mois</button>
+  </div>`;
+
+  if(lsData.locataires.filter(l=>l.actif).length===0){
+    h+=`<div class="empty-state"><div class="empty-icon">🏠</div>Aucun locataire actif. Cliquez "+ Nouveau locataire" pour commencer.</div>`;
+  } else {
+    h+=`<div class="ls-grid">`;
+    lsData.locataires.filter(l=>l.actif).forEach(loc=>{h+=locCard(loc,lsMonthKey);});
+    h+=`</div>`;
+  }
+
+  const inactifs=lsData.locataires.filter(l=>!l.actif);
+  if(inactifs.length>0){
+    h+=`<div class="section-title">Anciens locataires</div>
+    <div class="table-wrap"><table><thead><tr><th>Nom</th><th>Site</th><th>Entrée</th><th>Sortie</th><th>Action</th></tr></thead><tbody>
+    ${inactifs.map(l=>`<tr>
+      <td style="color:var(--muted)">${l.nom}</td><td style="color:var(--muted)">${l.site||'—'}</td>
+      <td class="td-date">${l.dateEntree||'—'}</td><td class="td-date">${l.dateSortie||'—'}</td>
+      <td><button onclick="reactiver('${l.id}')" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:700">Réactiver</button></td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  document.getElementById("page-content").innerHTML=h;
+}
+
+function locCard(loc,mKey){
+  const facs=(lsData.factures[loc.id]||{})[mKey]||[];
+  const f15=facs.find(f=>f.echeance===15);
+  const f25=facs.find(f=>f.echeance===25);
+
+  const billLine=(ech,loyer,fac)=>{
+    if(!loyer||parseFloat(loyer)<=0) return '';
+    if(!fac) return `<div class="billing-row"><span class="bill-date">Le ${ech}</span><span class="bill-amount">${fmt(parseFloat(loyer))}</span><span style="font-size:10px;color:var(--muted);font-style:italic">Non générée</span></div>`;
+    const isR=fac.statut==='received';
+    return `<div class="billing-row">
+      <span class="bill-date">Le ${ech}</span>
+      <span class="bill-amount">${fmt(fac.montant)}</span>
+      ${isR?`<span class="bill-status-btn bill-received">✓ Encaissé</span>`
+           :`<button class="bill-status-btn bill-pending" onclick="encaisser('${loc.id}','${mKey}',${ech})">Marquer encaissé</button>`}
+    </div>`;
+  };
+
+  return `<div class="loc-card">
+    <div class="loc-card-header">
+      <div><div class="loc-name">${loc.nom}</div><div class="loc-site">${loc.site||'—'}</div></div>
+      <span class="loc-status active">Actif</span>
+    </div>
+    <div class="loc-details">
+      <div><div class="loc-detail-label">Entrée</div><div class="loc-detail-val">${loc.dateEntree||'—'}</div></div>
+      <div><div class="loc-detail-label">Sortie prévue</div><div class="loc-detail-val">${loc.dateSortie||'En cours'}</div></div>
+      <div><div class="loc-detail-label">Loyer 15e</div><div class="loc-detail-val" style="color:var(--ls)">${fmt(parseFloat(loc.loyer15||0))}</div></div>
+      <div><div class="loc-detail-label">Loyer 25e</div><div class="loc-detail-val" style="color:var(--ls)">${fmt(parseFloat(loc.loyer25||0))}</div></div>
+    </div>
+    ${(f15||f25||(loc.loyer15>0||loc.loyer25>0))?`<div class="loc-billing">
+      <div class="loc-billing-title">Facturation — ${mKey}</div>
+      ${billLine(15,loc.loyer15,f15)}
+      ${billLine(25,loc.loyer25,f25)}
+    </div>`:''}
+    ${loc.notes?`<div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-style:italic">📝 ${loc.notes}</div>`:''}
+    <div class="loc-actions">
+      <button class="loc-action-btn" style="color:var(--rd);border-color:var(--rd);background:var(--rd-bg)" onclick="sortir('${loc.id}')">Départ</button>
+      <button class="loc-action-btn" style="color:var(--muted);border-color:var(--border);background:var(--surface2)" onclick="delLoc('${loc.id}')">Supprimer</button>
+    </div>
+  </div>`;
+}
+
+function addLocataire(){
+  const nom=document.getElementById("ls-nom").value.trim();
+  const site=document.getElementById("ls-site").value.trim();
+  const l15=parseFloat(document.getElementById("ls-l15").value)||0;
+  const l25=parseFloat(document.getElementById("ls-l25").value)||0;
+  const ent=document.getElementById("ls-entree").value;
+  const notes=document.getElementById("ls-notes").value.trim();
+  if(!nom){notify("Nom requis","error");return;}
+  if(l15===0&&l25===0){notify("Au moins un loyer requis","error");return;}
+  lsData.locataires.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),nom,site,loyer15:l15,loyer25:l25,dateEntree:ent,dateSortie:'',actif:true,notes});
+  lsAddMode=false;updateBadges();render();
+  notify(`Locataire "${nom}" ajouté`,"success");
+}
+
+function sortir(id){
+  const loc=lsData.locataires.find(l=>l.id===id);if(!loc)return;
+  const d=prompt(`Date de sortie de ${loc.nom} :`,todayStr());if(d===null)return;
+  loc.actif=false;loc.dateSortie=d;updateBadges();render();
+  notify(`${loc.nom} — départ enregistré`,"success");
+}
+
+function reactiver(id){
+  const loc=lsData.locataires.find(l=>l.id===id);if(!loc)return;
+  loc.actif=true;loc.dateSortie='';updateBadges();render();
+  notify(`${loc.nom} réactivé`,"success");
+}
+
+function delLoc(id){
+  const loc=lsData.locataires.find(l=>l.id===id);
+  if(!loc||!confirm(`Supprimer ${loc.nom} définitivement ?`))return;
+  lsData.locataires=lsData.locataires.filter(l=>l.id!==id);
+  delete lsData.factures[id];updateBadges();render();
+  notify("Locataire supprimé","success");
+}
+
+function genererMois(){
+  const mKey=lsMonthKey;
+  const actifs=lsData.locataires.filter(l=>l.actif);
+  let nb=0;
+  actifs.forEach(loc=>{
+    if(!lsData.factures[loc.id])lsData.factures[loc.id]={};
+    if(!lsData.factures[loc.id][mKey])lsData.factures[loc.id][mKey]=[];
+    const ex=lsData.factures[loc.id][mKey];
+    if(parseFloat(loc.loyer15||0)>0&&!ex.find(f=>f.echeance===15)){ex.push({echeance:15,montant:parseFloat(loc.loyer15),statut:"pending",dateEncaissement:null});nb++;}
+    if(parseFloat(loc.loyer25||0)>0&&!ex.find(f=>f.echeance===25)){ex.push({echeance:25,montant:parseFloat(loc.loyer25),statut:"pending",dateEncaissement:null});nb++;}
+  });
+  render();notify(`${nb} facture(s) générée(s)`,"success");
+}
+
+function encaisser(locId,mKey,echeance){
+  const facs=(lsData.factures[locId]||{})[mKey]||[];
+  const fac=facs.find(f=>f.echeance===echeance);if(!fac)return;
+  fac.statut='received';fac.dateEncaissement=todayStr();
+  const mIdx=parseInt(mKey.split('-')[1]);
+  const loc=lsData.locataires.find(l=>l.id===locId);
+  if(loc){
+    if(!data[mIdx]['LS'])data[mIdx]['LS']=[];
+    data[mIdx]['LS'].push({
+      id:Date.now().toString(36),
+      date:mKey+'-'+String(echeance).padStart(2,'0'),
+      libelle:`Loyer LS — ${loc.nom}${loc.site?' ('+loc.site+')':''} — échéance ${echeance}`,
+      type:'E',montant:fac.montant
+    });
+    updateBadges();
+  }
+  render();notify(`Encaissé — ${loc?loc.nom:''} +${fmt(fac.montant)}`,"success");
+}
+
+function getPending(mKey){
+  const r=[];
+  lsData.locataires.filter(l=>l.actif).forEach(loc=>{
+    ((lsData.factures[loc.id]||{})[mKey]||[]).filter(f=>f.statut==='pending').forEach(f=>{
+      r.push({nom:loc.nom,echeance:f.echeance,montant:f.montant});
+    });
+  });
+  return r;
+}
+
+// ══════════════════════════════════════════════
+// VUE MENSUELLE
+// ══════════════════════════════════════════════
+function renderMonth(m){
+  const mn=MONTHS[m-1];
+  const ops=getOps(m);
+  const totE=ops.filter(o=>o.type==="E").reduce((s,o)=>s+o.montant,0);
+  const totD=ops.filter(o=>o.type==="D").reduce((s,o)=>s+o.montant,0);
+  const mKey=`2026-${String(m).padStart(2,'0')}`;
+  const lsAlert=getPending(mKey);
+
+  document.getElementById("page-content").innerHTML=`
+  <div class="page-title">${mn} 2026</div>
+  <div class="page-sub">${ops.length} opération(s) saisie(s)</div>
+  ${lsAlert.length>0?`<div class="fact-alert">🏠 &nbsp;<strong>${lsAlert.length} loyer(s) LS en attente</strong> — <a href="#" onclick="switchView('ls',document.querySelector('.ls-btn'));return false" style="color:var(--ls)">Aller au tableau LS →</a></div>`:''}
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Entrées</div><div class="stat-value positive">${fmt(totE)}</div></div>
+    <div class="stat-card"><div class="stat-label">Sorties</div><div class="stat-value negative">${fmt(totD)}</div></div>
+    <div class="stat-card"><div class="stat-label">Solde net</div><div class="stat-value ${totE-totD>=0?'positive':'negative'}">${fmt(totE-totD)}</div></div>
+  </div>
+  <div class="service-tabs">
+    <div class="svc-chip ${currentSvc==='ALL'?'active':''}" data-svc="ALL" onclick="filterSvc('ALL')" style="color:var(--accent);background:#0D2040">Tous</div>
+    ${SERVICES.map(s=>`<div class="svc-chip ${currentSvc===s.code?'active':''}" data-svc="${s.code}" onclick="filterSvc('${s.code}')" style="color:${s.color};background:${s.bg}">${s.code}</div>`).join('')}
+  </div>
+  <div class="add-card">
+    <div class="add-card-title">+ Nouvelle opération</div>
+    <div class="form-row">
+      <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${todayStr()}" style="width:150px"></div>
+      <div class="form-group" style="flex:1;min-width:200px"><label>Libellé</label><input type="text" id="f-lib" placeholder="Description…" style="width:100%"></div>
+      <div class="form-group"><label>Service</label>
+        <select id="f-svc" style="width:120px">${SERVICES.map(s=>`<option value="${s.code}" ${currentSvc===s.code&&currentSvc!=='ALL'?'selected':''}>${s.code}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label>Type</label>
+        <div class="type-toggle">
+          <button class="type-btn ${formType==='E'?'active-e':''}" onclick="setType('E')">↑ Entrée</button>
+          <button class="type-btn ${formType==='D'?'active-d':''}" onclick="setType('D')">↓ Sortie</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Montant (€)</label><input type="number" id="f-amt" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="addOp(${m})">Ajouter</button></div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header-bar"><span class="table-title">Opérations — ${mn}</span><span class="ops-count">${ops.length} ligne(s)</span></div>
+    ${ops.length===0?`<div class="empty-state"><div class="empty-icon">📭</div>Aucune opération pour ${mn}</div>`
+    :`<table><thead><tr><th>Date</th><th>Service</th><th>Libellé</th><th>Type</th><th style="text-align:right">Montant</th><th></th></tr></thead>
+    <tbody>${ops.map(op=>{const s=SERVICES.find(x=>x.code===op.service)||SERVICES[0];return`<tr>
+      <td class="td-date">${op.date||'—'}</td>
+      <td><span class="td-svc" style="color:${s.color};background:${s.bg}">${op.service}</span></td>
+      <td>${op.libelle||'—'}</td>
+      <td><span class="type-badge ${op.type.toLowerCase()}">${op.type==='E'?'Entrée':'Sortie'}</span></td>
+      <td class="td-amount ${op.type.toLowerCase()}">${op.type==='E'?'+':'−'} ${fmt(op.montant)}</td>
+      <td><button class="btn-danger-sm" onclick="delOp(${m},'${op.service}','${op.id}')">✕</button></td>
+    </tr>`;}).join('')}</tbody></table>`}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// VUE ANNUELLE
+// ══════════════════════════════════════════════
+function renderAnnual(){
+  const at={};SERVICES.forEach(s=>at[s.code]={E:0,D:0});
+  let gE=0,gD=0;
+  for(let m=1;m<=12;m++)SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>{
+    if(op.type==='E'){at[s.code].E+=op.montant;gE+=op.montant;}
+    else{at[s.code].D+=op.montant;gD+=op.montant;}
+  }));
+  const md=MONTHS.map((mn,mi)=>{let e=0,d=0;SERVICES.forEach(s=>(data[mi+1][s.code]||[]).forEach(op=>{if(op.type==='E')e+=op.montant;else d+=op.montant;}));return{name:mn,e,d,solde:e-d};});
+  const lsActifs=lsData.locataires.filter(l=>l.actif);
+  const lsTheo=lsActifs.reduce((s,l)=>s+parseFloat(l.loyer15||0)+parseFloat(l.loyer25||0),0);
+
+  document.getElementById("page-content").innerHTML=`
+  <div class="page-title">Synthèse Annuelle 2026</div>
+  <div class="page-sub">Vue consolidée — tous services</div>
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Entrées</div><div class="stat-value positive">${fmt(gE)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Sorties</div><div class="stat-value negative">${fmt(gD)}</div></div>
+    <div class="stat-card"><div class="stat-label">Solde Net</div><div class="stat-value ${gE-gD>=0?'positive':'negative'}">${fmt(gE-gD)}</div></div>
+    <div class="stat-card"><div class="stat-label">LS mensuel théorique</div><div class="stat-value neutral">${fmt(lsTheo)}</div></div>
+  </div>
+  <div class="section-title">Par service</div>
+  <div class="totals-grid">${SERVICES.map(s=>{const t=at[s.code];return`
+    <div class="svc-total-card" style="border-color:${s.color}30">
+      <div class="svc-total-name" style="color:${s.color}">${s.code} — ${s.label}</div>
+      <div class="svc-total-row"><span>Entrées</span><span style="color:var(--income);font-family:'DM Mono',monospace">${fmt(t.E)}</span></div>
+      <div class="svc-total-row"><span>Sorties</span><span style="color:var(--expense);font-family:'DM Mono',monospace">${fmt(t.D)}</span></div>
+      <div class="svc-total-net"><span>Solde net</span><span style="color:${t.E-t.D>=0?'var(--income)':'var(--expense)'};font-family:'DM Mono',monospace">${fmt(t.E-t.D)}</span></div>
+    </div>`;}).join('')}</div>
+  <div class="section-title">Par mois</div>
+  <div class="table-wrap"><table><thead><tr><th>Mois</th><th style="text-align:right;color:var(--income)">Entrées</th><th style="text-align:right;color:var(--expense)">Sorties</th><th style="text-align:right">Solde</th><th style="text-align:right">Cumul</th></tr></thead>
+  <tbody>${(()=>{let c=0;return md.map(x=>{c+=x.solde;return`<tr>
+    <td style="font-weight:700">${x.name}</td>
+    <td class="td-amount e">${fmt(x.e)}</td>
+    <td class="td-amount d">${fmt(x.d)}</td>
+    <td class="td-amount ${x.solde>=0?'e':'d'}">${fmt(x.solde)}</td>
+    <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:${c>=0?'var(--accent)':'var(--expense)'}">${fmt(c)}</td>
+  </tr>`;}).join('');})()}</tbody></table></div>
+  <div class="export-card">
+    <div class="export-info"><div class="export-title">📊 Générer le fichier Excel complet</div><div class="export-sub">12 onglets mensuels + synthèse + données LS</div></div>
+    <button class="btn btn-success" onclick="generateExcel()">⬇ Télécharger Excel 2026</button>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// OPS CRUD
+// ══════════════════════════════════════════════
+function getOps(m){
+  let ops=[];
+  SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>ops.push({...op,service:s.code})));
+  if(currentSvc!=="ALL")ops=ops.filter(o=>o.service===currentSvc);
+  return ops.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+}
+function addOp(m){
+  const date=document.getElementById("f-date").value;
+  const lib=document.getElementById("f-lib").value.trim();
+  const svc=document.getElementById("f-svc").value;
+  const amt=parseFloat(document.getElementById("f-amt").value);
+  if(!lib){notify("Libellé requis","error");return;}
+  if(!amt||amt<=0){notify("Montant invalide","error");return;}
+  if(!data[m][svc])data[m][svc]=[];
+  data[m][svc].push({id:Date.now().toString(36),date,libelle:lib,type:formType,montant:amt});
+  document.getElementById("f-lib").value="";document.getElementById("f-amt").value="";
+  updateBadges();render();
+  notify(`${svc} — ${formType==='E'?'Entrée':'Sortie'} ${fmt(amt)}`,"success");
+}
+function delOp(m,svc,id){data[m][svc]=(data[m][svc]||[]).filter(o=>o.id!==id);updateBadges();render();}
+function filterSvc(svc){currentSvc=svc;render();}
+function setType(t){formType=t;render();}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function fmt(v){return new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",minimumFractionDigits:2}).format(v||0);}
+function todayStr(){return new Date().toISOString().split("T")[0];}
+
+function exportData(){
+  const p={_tresorerie:data,_ls:lsData};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));
+  a.download="tresorerie_2026.json";a.click();
+  notify("Données sauvegardées","success");
+}
+function importData(){document.getElementById("file-input").click();}
+function loadFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const imp=JSON.parse(ev.target.result);
+      if(imp._tresorerie){data=imp._tresorerie;lsData=imp._ls||{locataires:[],factures:{}};dcData=imp._dc||{dettes:[],charges:[]};}
+      else{data=imp;lsData={locataires:[],factures:{}};}
+      for(let m=1;m<=12;m++){if(!data[m])data[m]={};SERVICES.forEach(s=>{if(!data[m][s.code])data[m][s.code]=[];});}
+      updateBadges();render();notify("Données chargées","success");
+    }catch{notify("Fichier invalide","error");}
+  };
+  r.readAsText(f);e.target.value="";
+}
+
+function generateExcel(){
+  const p={_tresorerie:data,_ls:lsData,_dc:dcData,_generated:new Date().toISOString()};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));
+  a.download="tresorerie_2026_data.json";a.click();
+  notify("JSON exporté — glissez-le sur Claude pour l'Excel","success");
+  setTimeout(()=>{
+    const m=document.createElement("div");
+    m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px";
+    m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--ls);border-radius:12px;padding:28px;max-width:460px;width:100%">
+      <div style="font-size:16px;font-weight:800;margin-bottom:8px">📊 Générer l'Excel</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">
+        Le fichier <strong style="color:var(--text)">tresorerie_2026_data.json</strong> vient d'être téléchargé.<br><br>
+        Pour générer l'Excel (12 onglets + synthèse annuelle + onglet LS) :
+      </div>
+      <ol style="font-size:13px;color:var(--text);line-height:2.2;padding-left:18px;margin-bottom:16px">
+        <li>Revenez dans la conversation Claude</li>
+        <li>Glissez-déposez le fichier JSON</li>
+        <li>Tapez : <em style="color:var(--accent)">"Génère l'Excel à partir de ce JSON"</em></li>
+      </ol>
+      <button class="btn btn-primary" onclick="this.closest('div[style]').remove()" style="width:100%">Compris</button>
+    </div>`;
+    document.body.appendChild(m);
+  },300);
+}
+
+// ══════════════════════════════════════════════
+// MODULE DETTES & CHARGES FIXES
+// ══════════════════════════════════════════════
+function renderDC(){
+  const totalDette=dcData.dettes.reduce((s,d)=>s+(parseFloat(d.montantTotal||0)-parseFloat(d.montantPaye||0)),0);
+  const totalMens=dcData.charges.filter(c=>c.type==='mensuelle').reduce((s,c)=>s+parseFloat(c.montant||0),0);
+  const totalTrim=dcData.charges.filter(c=>c.type==='trimestrielle').reduce((s,c)=>s+parseFloat(c.montant||0),0);
+  const totalAnn=dcData.charges.filter(c=>c.type==='annuelle').reduce((s,c)=>s+parseFloat(c.montant||0),0);
+  const chargeAnnuelle=totalMens*12+totalTrim*4+totalAnn;
+
+  let h=`<div class="page-title">📋 Dettes &amp; Charges fixes</div>
+  <div class="page-sub">Suivi des engagements financiers récurrents et dettes en cours</div>
+  <div class="dc-banner">
+    <div class="ls-banner-item"><span class="ls-banner-label">Dettes restantes</span><span class="dc-banner-val" style="color:var(--rd)">${fmt(totalDette)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Charges mensuelles</span><span class="dc-banner-val" style="color:var(--fg)">${fmt(totalMens)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Charges trimestrielles</span><span class="dc-banner-val" style="color:var(--lm)">${fmt(totalTrim)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Charge annuelle totale</span><span class="dc-banner-val" style="color:var(--muted)">${fmt(chargeAnnuelle)}</span></div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" style="background:var(--rd);color:#fff;font-size:12px;padding:7px 14px" onclick="dcAddMode='dette';render()">+ Dette</button>
+      <button class="btn" style="background:var(--fg);color:#fff;font-size:12px;padding:7px 14px" onclick="dcAddMode='charge';render()">+ Charge</button>
+    </div>
+  </div>`;
+
+  // ── Formulaire ajout dette
+  if(dcAddMode==='dette') h+=`
+  <div class="add-card" style="border-color:var(--rd)">
+    <div class="add-card-title" style="color:var(--rd)">+ Nouvelle dette</div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1;min-width:160px"><label>Intitulé</label><input type="text" id="dc-dnom" placeholder="Ex: Prêt banque / Fournisseur X"></div>
+      <div class="form-group" style="flex:1;min-width:140px"><label>Créancier</label><input type="text" id="dc-dcred" placeholder="Organisme ou personne"></div>
+      <div class="form-group"><label>Montant total (€)</label><input type="number" id="dc-dtot" min="0" step="0.01" placeholder="0.00" style="width:140px"></div>
+      <div class="form-group"><label>Déjà remboursé (€)</label><input type="number" id="dc-dpay" min="0" step="0.01" placeholder="0.00" style="width:140px"></div>
+      <div class="form-group"><label>Mensualité (€)</label><input type="number" id="dc-dmens" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>Date début</label><input type="date" id="dc-ddate" value="${todayStr()}" style="width:145px"></div>
+      <div class="form-group" style="flex:1;min-width:160px"><label>Notes</label><input type="text" id="dc-dnotes" placeholder="Conditions, ATD…"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" style="background:var(--rd);color:#fff" onclick="addDette()">✓ Enregistrer</button>
+      <button class="btn btn-ghost" onclick="dcAddMode=null;render()">Annuler</button>
+    </div>
+  </div>`;
+
+  // ── Formulaire ajout charge
+  if(dcAddMode==='charge') h+=`
+  <div class="add-card" style="border-color:var(--fg)">
+    <div class="add-card-title" style="color:var(--fg)">+ Nouvelle charge fixe</div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1;min-width:160px"><label>Intitulé</label><input type="text" id="dc-cnom" placeholder="Ex: URSSAF, TVA, Humanis…"></div>
+      <div class="form-group" style="flex:1;min-width:140px"><label>Organisme</label><input type="text" id="dc-corg" placeholder="URSSAF, DGFiP, Humanis…"></div>
+      <div class="form-group">
+        <label>Type de périodicité</label>
+        <select id="dc-ctype" style="width:165px">
+          <option value="mensuelle">Mensuelle (chaque mois)</option>
+          <option value="trimestrielle">Trimestrielle (T1/T2/T3/T4)</option>
+          <option value="annuelle">Annuelle</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Montant par échéance (€)</label><input type="number" id="dc-cmontant" min="0" step="0.01" placeholder="0.00" style="width:155px"></div>
+      <div class="form-group" style="flex:1;min-width:160px"><label>Notes</label><input type="text" id="dc-cnotes" placeholder="Base de calcul, particularités…"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" style="background:var(--fg);color:#fff" onclick="addCharge()">✓ Enregistrer</button>
+      <button class="btn btn-ghost" onclick="dcAddMode=null;render()">Annuler</button>
+    </div>
+  </div>`;
+
+  // ── Section dettes
+  h+=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Dettes en cours</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${dcData.dettes.length} dette(s) — Restant : ${fmt(totalDette)}</span>
+    </div>`;
+  if(dcData.dettes.length===0){
+    h+=`<div class="empty-state"><div class="empty-icon" style="font-size:24px">✓</div>Aucune dette enregistrée</div>`;
+  } else {
+    h+=`<table><thead><tr>
+      <th>Intitulé</th><th>Créancier</th><th>Restant dû</th><th>Mensualité</th>
+      <th>Avancement</th><th>Notes</th><th></th>
+    </tr></thead><tbody>`;
+    dcData.dettes.forEach(d=>{
+      const tot=parseFloat(d.montantTotal||0);
+      const pay=parseFloat(d.montantPaye||0);
+      const rest=tot-pay;
+      const pct=tot>0?Math.round(pay/tot*100):0;
+      const moisRestants=d.mensualite>0?Math.ceil(rest/parseFloat(d.mensualite)):null;
+      h+=`<tr>
+        <td style="font-weight:700">${d.nom}</td>
+        <td style="color:var(--muted)">${d.credancier||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--rd)">${fmt(rest)}</td>
+        <td style="font-family:'DM Mono',monospace">${d.mensualite>0?fmt(parseFloat(d.mensualite)):'—'}</td>
+        <td style="min-width:140px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px">
+            <span>${pct}% remboursé</span>${moisRestants?`<span>~${moisRestants} mois</span>`:''}
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%;background:${pct>75?'var(--income)':pct>40?'var(--lm)':'var(--rd)'}"></div>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted);font-style:italic">${d.notes||''}</td>
+        <td>
+          <button class="btn-danger-sm" style="font-size:11px;color:var(--income);margin-right:4px" onclick="payerMensualite('${d.id}')" title="Enregistrer paiement mensualité">+€</button>
+          <button class="btn-danger-sm" onclick="delDette('${d.id}')">✕</button>
+        </td>
+      </tr>`;
+    });
+    h+=`</tbody></table>`;
+  }
+  h+=`</div>`;
+
+  // ── Section charges mensuelles
+  const mensuelles=dcData.charges.filter(c=>c.type==='mensuelle');
+  h+=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Charges mensuelles <span class="dc-tag dc-tag-monthly">Chaque mois</span></span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${mensuelles.length} charge(s) — ${fmt(totalMens)} / mois</span>
+    </div>`;
+  if(mensuelles.length===0){
+    h+=`<div class="empty-state" style="padding:24px"><div class="empty-icon" style="font-size:20px">+</div>Aucune charge mensuelle — cliquez "+ Charge"</div>`;
+  } else {
+    h+=chargesTable(mensuelles,'mensuelle');
+  }
+  h+=`</div>`;
+
+  // ── Section charges trimestrielles
+  const trim=dcData.charges.filter(c=>c.type==='trimestrielle');
+  h+=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Charges trimestrielles <span class="dc-tag dc-tag-quarterly">T1 / T2 / T3 / T4</span></span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${trim.length} charge(s) — ${fmt(totalTrim)} / trimestre</span>
+    </div>`;
+  if(trim.length===0){
+    h+=`<div class="empty-state" style="padding:24px"><div class="empty-icon" style="font-size:20px">+</div>Aucune charge trimestrielle</div>`;
+  } else {
+    h+=chargesTable(trim,'trimestrielle');
+  }
+  h+=`</div>`;
+
+  // ── Section charges annuelles
+  const ann=dcData.charges.filter(c=>c.type==='annuelle');
+  if(ann.length>0){
+    h+=`<div class="dc-section">
+      <div class="dc-section-hdr">
+        <span class="dc-section-title">Charges annuelles <span class="dc-tag dc-tag-debt">1 fois / an</span></span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${fmt(totalAnn)} / an</span>
+      </div>${chargesTable(ann,'annuelle')}</div>`;
+  }
+
+  // ── Projection mensuelle
+  h+=projectionPanel(totalMens,totalTrim,totalAnn,dcData.dettes);
+
+  document.getElementById("page-content").innerHTML=h;
+}
+
+function chargesTable(charges, type){
+  const now=new Date();
+  const moisActuel=now.getMonth()+1;
+  const trimActuel=Math.ceil(moisActuel/3);
+
+  let html=`<table><thead><tr>
+    <th>Intitulé</th><th>Organisme</th><th>Montant</th>
+    <th>Prochaine échéance</th><th>Statut ce mois/trim</th><th>Notes</th><th></th>
+  </tr></thead><tbody>`;
+
+  charges.forEach(c=>{
+    const moisKey=`2026-${String(moisActuel).padStart(2,'0')}`;
+    const hist=c.historique||[];
+    const payeCeMois=hist.find(h=>h.mois===moisKey);
+    const payeCeTrim=type==='trimestrielle'?hist.find(h=>{
+      const hm=parseInt((h.mois||'').split('-')[1]||0);
+      return Math.ceil(hm/3)===trimActuel && (h.mois||'').startsWith('2026');
+    }):null;
+    const estPaye=type==='mensuelle'?payeCeMois:(type==='trimestrielle'?payeCeTrim:hist.length>0);
+
+    const prochaineEch=type==='mensuelle'?`Mois ${moisActuel}`:
+      type==='trimestrielle'?`T${trimActuel} (mois ${trimActuel*3-2}-${trimActuel*3})`:
+      'Annuelle';
+
+    html+=`<tr>
+      <td style="font-weight:700">${c.nom}</td>
+      <td style="color:var(--muted)">${c.organisme||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--fg)">${fmt(parseFloat(c.montant||0))}</td>
+      <td style="font-size:12px;color:var(--muted)">${prochaineEch}</td>
+      <td>${estPaye
+        ?`<span style="background:#0D2D1E;color:var(--income);font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px">✓ Payé</span>`
+        :`<button style="background:#2D2200;color:var(--lm);font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;border:none;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s"
+          onmouseover="this.style.background='var(--lm)';this.style.color='#000'"
+          onmouseout="this.style.background='#2D2200';this.style.color='var(--lm)'"
+          onclick="payerCharge('${c.id}')">Marquer payé</button>`
+      }</td>
+      <td style="font-size:11px;color:var(--muted);font-style:italic">${c.notes||''}</td>
+      <td><button class="btn-danger-sm" onclick="delCharge('${c.id}')">✕</button></td>
+    </tr>`;
+  });
+  html+=`</tbody></table>`;
+  return html;
+}
+
+function projectionPanel(mensuel, trimestriel, annuel, dettes){
+  const mensualitesDettes=dettes.reduce((s,d)=>s+parseFloat(d.mensualite||0),0);
+  const chargesMois=mensuel+Math.round(trimestriel/3*100)/100+Math.round(annuel/12*100)/100;
+  const totalMois=chargesMois+mensualitesDettes;
+  const MOIS_FR=["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+  const now=new Date().getMonth();
+
+  const bars=MOIS_FR.map((mn,i)=>{
+    const trimCharge=(i+1)%3===0?trimestriel:0; // simplification : fin de trimestre
+    const annCharge=i===11?annuel:0;
+    const total=mensuel+trimCharge+annCharge+mensualitesDettes;
+    return{mn,total,isCurrentOrFuture:i>=now};
+  });
+  const maxVal=Math.max(...bars.map(b=>b.total),1);
+
+  let html=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Projection mensuelle des charges</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">Charge moy. : ${fmt(totalMois)} / mois</span>
+    </div>
+    <div style="padding:16px">
+      <div style="display:flex;align-items:flex-end;gap:6px;height:100px">`;
+  bars.forEach(b=>{
+    const h=Math.max(4,Math.round(b.total/maxVal*88));
+    html+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="width:100%;height:${h}px;background:${b.isCurrentOrFuture?'var(--rd)':'var(--surface3)'};border-radius:3px 3px 0 0;opacity:${b.isCurrentOrFuture?'1':'0.5'}"></div>
+      <span style="font-size:9px;color:var(--muted)">${b.mn}</span>
+    </div>`;
+  });
+  html+=`</div>
+      <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;font-size:12px">
+        <span style="color:var(--muted)">Charges fixes : <strong style="color:var(--fg)">${fmt(chargesMois)}</strong></span>
+        <span style="color:var(--muted)">Mensualités dettes : <strong style="color:var(--rd)">${fmt(mensualitesDettes)}</strong></span>
+        <span style="color:var(--muted)">Total mensuel moyen : <strong style="color:var(--text)">${fmt(totalMois)}</strong></span>
+      </div>
+    </div>
+  </div>`;
+  return html;
+}
+
+function addDette(){
+  const nom=document.getElementById("dc-dnom").value.trim();
+  const cred=document.getElementById("dc-dcred").value.trim();
+  const tot=parseFloat(document.getElementById("dc-dtot").value)||0;
+  const pay=parseFloat(document.getElementById("dc-dpay").value)||0;
+  const mens=parseFloat(document.getElementById("dc-dmens").value)||0;
+  const date=document.getElementById("dc-ddate").value;
+  const notes=document.getElementById("dc-dnotes").value.trim();
+  if(!nom){notify("Intitulé requis","error");return;}
+  if(tot<=0){notify("Montant total requis","error");return;}
+  dcData.dettes.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),nom,credancier:cred,montantTotal:tot,montantPaye:pay,mensualite:mens,dateDebut:date,notes});
+  dcAddMode=null;updateBadges();render();
+  notify(`Dette "${nom}" enregistrée`,"success");
+}
+
+function addCharge(){
+  const nom=document.getElementById("dc-cnom").value.trim();
+  const org=document.getElementById("dc-corg").value.trim();
+  const type=document.getElementById("dc-ctype").value;
+  const montant=parseFloat(document.getElementById("dc-cmontant").value)||0;
+  const notes=document.getElementById("dc-cnotes").value.trim();
+  if(!nom){notify("Intitulé requis","error");return;}
+  if(montant<=0){notify("Montant requis","error");return;}
+  dcData.charges.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),nom,organisme:org,type,montant,notes,historique:[]});
+  dcAddMode=null;updateBadges();render();
+  notify(`Charge "${nom}" enregistrée`,"success");
+}
+
+function payerMensualite(id){
+  const d=dcData.dettes.find(x=>x.id===id);if(!d)return;
+  const mens=parseFloat(d.mensualite||0);
+  if(mens<=0){notify("Pas de mensualité définie","error");return;}
+  d.montantPaye=parseFloat(d.montantPaye||0)+mens;
+  // Injecter dans opérations du mois courant
+  const m=new Date().getMonth()+1;
+  if(!data[m]['RD'])data[m]['RD']=[];
+  data[m]['RD'].push({id:Date.now().toString(36),date:todayStr(),libelle:`Remb. dette — ${d.nom} (${d.credancier||''})`,type:'D',montant:mens});
+  updateBadges();render();
+  notify(`Mensualité ${fmt(mens)} enregistrée pour ${d.nom}`,"success");
+}
+
+function payerCharge(id){
+  const c=dcData.charges.find(x=>x.id===id);if(!c)return;
+  const moisKey=`2026-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+  if(!c.historique)c.historique=[];
+  c.historique.push({mois:moisKey,paye:parseFloat(c.montant||0),date:todayStr()});
+  // Injecter dans opérations
+  const m=new Date().getMonth()+1;
+  if(!data[m]['FG'])data[m]['FG']=[];
+  data[m]['FG'].push({id:Date.now().toString(36),date:todayStr(),libelle:`Charge — ${c.nom} (${c.organisme||''})`,type:'D',montant:parseFloat(c.montant||0)});
+  updateBadges();render();
+  notify(`${c.nom} — ${fmt(parseFloat(c.montant||0))} enregistré`,"success");
+}
+
+function delDette(id){
+  if(!confirm("Supprimer cette dette ?"))return;
+  dcData.dettes=dcData.dettes.filter(d=>d.id!==id);updateBadges();render();
+  notify("Dette supprimée","success");
+}
+
+function delCharge(id){
+  if(!confirm("Supprimer cette charge ?"))return;
+  dcData.charges=dcData.charges.filter(c=>c.id!==id);updateBadges();render();
+  notify("Charge supprimée","success");
+}
+
+
+function notify(msg,type="success"){
+  const n=document.getElementById("notif");
+  n.textContent=(type==="success"?"✓ ":"✕ ")+msg;
+  n.className=`notif ${type} show`;
+  setTimeout(()=>n.classList.remove("show"),3000);
+}
+
+
+// ══════════════════════════════════════════════
+// GOOGLE DRIVE INTEGRATION
+// ══════════════════════════════════════════════
+const DRIVE_FILENAME = 'tresorerie_2026_data.json';
+const DRIVE_SCOPES   = 'https://www.googleapis.com/auth/drive.file';
+
+let driveState = {
+  clientId:   localStorage.getItem('drive_client_id') || '',
+  token:      null,
+  fileId:     localStorage.getItem('drive_file_id') || '',
+  connected:  false,
+  syncing:    false,
+};
+
+function driveSetStatus(dot, msg, lastSync){
+  const d=document.getElementById('drive-dot');
+  const s=document.getElementById('drive-status');
+  const l=document.getElementById('drive-last-sync');
+  if(d){d.className='drive-dot '+dot;}
+  if(s) s.textContent=msg;
+  if(l && lastSync) l.textContent='Dernière sync : '+lastSync;
+}
+
+function driveConnect(){
+  // If no client ID saved, show config panel
+  if(!driveState.clientId){
+    showDriveConfigPanel();
+    return;
+  }
+  driveStartAuth();
+}
+
+function showDriveConfigPanel(){
+  // Inject config form into page-content temporarily
+  const existing = document.getElementById('drive-config-panel');
+  if(existing){existing.remove();return;}
+  const panel = document.createElement('div');
+  panel.id='drive-config-panel';
+  panel.className='drive-config';
+  panel.style.cssText='position:fixed;top:70px;right:24px;z-index:150;width:420px;box-shadow:0 8px 32px rgba(0,0,0,.4)';
+  panel.innerHTML=`
+    <div class="drive-config-title">☁ Configuration Google Drive</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Client ID Google OAuth</label>
+      <input type="text" id="drive-cid-input" placeholder="123456789-abc….apps.googleusercontent.com"
+        value="${driveState.clientId}" style="width:100%;font-size:12px">
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+      Obtenez votre Client ID sur <strong style="color:var(--accent)">console.cloud.google.com</strong><br>
+      → APIs → Identifiants → Créer → OAuth 2.0 → Application Web
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ls" onclick="saveDriveClientId()" style="font-size:12px;padding:6px 16px">✓ Connecter</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('drive-config-panel').remove()" style="font-size:12px;padding:6px 12px">Annuler</button>
+    </div>`;
+  document.body.appendChild(panel);
+  setTimeout(()=>document.getElementById('drive-cid-input')&&document.getElementById('drive-cid-input').focus(),100);
+}
+
+function saveDriveClientId(){
+  const val = (document.getElementById('drive-cid-input')||{}).value||'';
+  if(!val.includes('apps.googleusercontent.com')){
+    notify('Client ID invalide — doit se terminer par apps.googleusercontent.com','error');
+    return;
+  }
+  driveState.clientId = val;
+  localStorage.setItem('drive_client_id', val);
+  const p = document.getElementById('drive-config-panel');
+  if(p) p.remove();
+  driveStartAuth();
+}
+
+function driveStartAuth(){
+  if(!window.google || !window.google.accounts){
+    driveSetStatus('err','API Google non chargée — vérifiez votre connexion internet');
+    notify('API Google non disponible','error');
+    return;
+  }
+  driveSetStatus('warn','Connexion à Google Drive…');
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: driveState.clientId,
+    scope: DRIVE_SCOPES,
+    callback: (resp) => {
+      if(resp.error){
+        driveSetStatus('err','Erreur auth : '+resp.error);
+        notify('Connexion Google échouée : '+resp.error,'error');
+        return;
+      }
+      driveState.token = resp.access_token;
+      driveState.connected = true;
+      driveSetStatus('ok','Drive connecté');
+      document.getElementById('btn-drive-connect').textContent='☁ Reconnecté';
+      document.getElementById('btn-drive-save').style.display='';
+      notify('Drive connecté','success');
+      driveLoadOrCreate();
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function driveLoadOrCreate(){
+  driveSetStatus('warn','Recherche du fichier sur Drive…');
+  driveState.syncing=true;
+
+  try {
+    // Search for existing file
+    let fileId = driveState.fileId;
+    if(!fileId){
+      const searchRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name%3D'${DRIVE_FILENAME}'+and+trashed%3Dfalse&fields=files(id,name,modifiedTime)`,
+        {headers:{Authorization:'Bearer '+driveState.token}}
+      );
+      const searchData = await searchRes.json();
+      if(searchData.files && searchData.files.length>0){
+        fileId = searchData.files[0].id;
+        driveState.fileId = fileId;
+        localStorage.setItem('drive_file_id', fileId);
+      }
+    }
+
+    if(fileId){
+      // Load existing data
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        {headers:{Authorization:'Bearer '+driveState.token}}
+      );
+      if(res.ok){
+        const imp = await res.json();
+        if(imp._tresorerie){
+          data=imp._tresorerie;
+          lsData=imp._ls||{locataires:[],factures:{}};
+          dcData=imp._dc||{dettes:[],charges:[]};
+          for(let m=1;m<=12;m++){
+            if(!data[m])data[m]={};
+            SERVICES.forEach(s=>{if(!data[m][s.code])data[m][s.code]=[];});
+          }
+          updateBadges(); render();
+          driveSetStatus('ok','Données chargées depuis Drive',new Date().toLocaleTimeString('fr-FR'));
+          notify('Données Drive chargées','success');
+        }
+      }
+    } else {
+      // Create new file
+      await driveCreateFile();
+    }
+  } catch(e) {
+    driveSetStatus('err','Erreur Drive : '+e.message);
+    notify('Erreur Drive : '+e.message,'error');
+  }
+  driveState.syncing=false;
+}
+
+async function driveCreateFile(){
+  const payload = {_tresorerie:data,_ls:lsData,_dc:dcData,_generated:new Date().toISOString()};
+  const meta = {name:DRIVE_FILENAME,mimeType:'application/json'};
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file', new Blob([JSON.stringify(payload)],{type:'application/json'}));
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    {method:'POST',headers:{Authorization:'Bearer '+driveState.token},body:form}
+  );
+  const d = await res.json();
+  driveState.fileId = d.id;
+  localStorage.setItem('drive_file_id', d.id);
+  driveSetStatus('ok','Fichier créé sur Drive',new Date().toLocaleTimeString('fr-FR'));
+  notify('Fichier créé sur Drive : '+DRIVE_FILENAME,'success');
+}
+
+async function driveSave(){
+  if(!driveState.connected || !driveState.token){
+    notify('Drive non connecté','error'); return;
+  }
+  if(driveState.syncing) return;
+  driveState.syncing=true;
+  const btn=document.getElementById('btn-drive-save');
+  if(btn){btn.innerHTML='<span class="sync-spinner"></span> Sauvegarde...';}
+  driveSetStatus('warn','Sauvegarde en cours…');
+
+  try {
+    const payload = {_tresorerie:data,_ls:lsData,_dc:dcData,_generated:new Date().toISOString()};
+    let fileId = driveState.fileId;
+
+    if(fileId){
+      // Update existing
+      await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+        {method:'PATCH',headers:{Authorization:'Bearer '+driveState.token,'Content-Type':'application/json'},
+         body:JSON.stringify(payload)}
+      );
+    } else {
+      await driveCreateFile();
+    }
+    const t=new Date().toLocaleTimeString('fr-FR');
+    driveSetStatus('ok','Sauvegardé sur Drive',t);
+    notify('Sauvegardé sur Drive ✓','success');
+  } catch(e){
+    driveSetStatus('err','Erreur sauvegarde : '+e.message);
+    notify('Erreur : '+e.message,'error');
+  }
+  if(btn){btn.innerHTML='☁ Sauvegarder sur Drive';}
+  driveState.syncing=false;
+}
+
+// Auto-save toutes les 3 minutes si connecté
+setInterval(()=>{if(driveState.connected && !driveState.syncing) driveSave();}, 3*60*1000);
+
+// Reconnect si client ID déjà connu au chargement
+window.addEventListener('load',()=>{
+  if(driveState.clientId && window.google && window.google.accounts){
+    setTimeout(driveStartAuth, 1200);
+  }
+});
+
+initNav();updateBadges();
+</script>
+</body>
+</html>
