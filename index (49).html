@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trésorerie AEROGOMM 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0D1117; --surface:#161B22; --surface2:#1C2128; --surface3:#21262D;
+    --border:#30363D; --border2:#484F58; --text:#E6EDF3; --muted:#8B949E; --accent:#58A6FF;
+    --prgo:#2E8BC0; --prgo-bg:#0D2D45;
+    --ls:#3FB27F;   --ls-bg:#0D2D1E;
+    --lm:#D4A017;   --lm-bg:#2D2200;
+    --lmpm:#A87DC4; --lmpm-bg:#241535;
+    --vm:#2EC4B6;   --vm-bg:#0D2A28;
+    --fg:#E07B39;   --fg-bg:#2D1800;
+    --rd:#E05252;   --rd-bg:#2D0C0C;
+    --cc:#C9A85C;   --cc-bg:#2D2408;
+    --income:#3FB27F; --expense:#E05252; --radius:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;
+    display:flex;align-items:center;justify-content:space-between;height:60px;
+    position:sticky;top:0;z-index:100;}
+  .app-logo{font-size:16px;font-weight:800;letter-spacing:-.5px;}
+  .app-logo span{color:var(--accent);}
+  .header-actions{display:flex;gap:10px;align-items:center;}
+  .layout{display:flex;min-height:calc(100vh - 60px);}
+  .sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+    padding:16px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;}
+  .sidebar-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);
+    padding:8px 16px 4px;text-transform:uppercase;}
+  .month-btn{display:flex;align-items:center;justify-content:space-between;width:100%;
+    padding:8px 16px;background:none;border:none;cursor:pointer;color:var(--muted);
+    font-family:'Syne',sans-serif;font-size:13px;font-weight:600;transition:all .15s;
+    border-left:3px solid transparent;}
+  .month-btn:hover{color:var(--text);background:var(--surface2);}
+  .month-btn.active{color:var(--accent);background:var(--surface2);border-left-color:var(--accent);}
+  .month-btn.ls-btn.active{color:var(--ls);border-left-color:var(--ls);}
+  .month-badge{font-family:'DM Mono',monospace;font-size:10px;background:var(--surface3);
+    border-radius:10px;padding:1px 7px;color:var(--muted);}
+  .month-btn.active .month-badge{background:var(--accent);color:#000;}
+  .month-btn.ls-btn.active .month-badge{background:var(--ls);color:#000;}
+  .month-btn.dc-btn.active{color:var(--rd);border-left-color:var(--rd);}
+  .month-btn.dc-btn.active .month-badge{background:var(--rd);color:#fff;}
+  .month-btn.hist-btn.active{color:var(--lm);border-left-color:var(--lm);}
+  .month-btn.marge-btn.active{color:var(--vm);border-left-color:var(--vm);}
+  .month-btn.cc-btn{border-top:1px solid var(--border);padding-top:16px;padding-bottom:16px;margin-top:4px;font-size:15px;font-weight:700;}
+  .month-btn.cc-btn.active{color:var(--lm);border-left-color:var(--lm);}
+  .dc-banner{background:linear-gradient(135deg,#2D0C0C,#1F2D0C);border:1px solid var(--rd);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+  .dc-banner-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;}
+  .dc-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+  .dc-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+  .dc-section-title{font-size:13px;font-weight:700;}
+  .dc-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;}
+  .dc-tag-monthly{background:#2D0C0C;color:var(--rd);}
+  .dc-tag-quarterly{background:#2D1800;color:var(--fg);}
+  .dc-tag-debt{background:#241535;color:var(--lmpm);}
+  .progress-bar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:4px;}
+  .progress-fill{height:100%;border-radius:3px;transition:width .3s;}
+  .main{flex:1;padding:24px;overflow:auto;}
+  .page-title{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+    color:var(--muted);margin-bottom:12px;margin-top:24px;}
+  .service-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+  .svc-chip{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+    letter-spacing:.5px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;}
+  .svc-chip.active{border-color:currentColor;}
+  .svc-chip[data-svc="PRGO"]{color:var(--prgo);background:var(--prgo-bg);}
+  .svc-chip[data-svc="LS"]{color:var(--ls);background:var(--ls-bg);}
+  .svc-chip[data-svc="LM"]{color:var(--lm);background:var(--lm-bg);}
+  .svc-chip[data-svc="LMPM"]{color:var(--lmpm);background:var(--lmpm-bg);}
+  .svc-chip[data-svc="VM"]{color:var(--vm);background:var(--vm-bg);}
+  .svc-chip[data-svc="FG"]{color:var(--fg);background:var(--fg-bg);}
+  .svc-chip[data-svc="RD"]{color:var(--rd);background:var(--rd-bg);}
+  .svc-chip[data-svc="ALL"]{color:var(--accent);background:#0D2040;}
+  .add-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;margin-bottom:20px;}
+  .add-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+    color:var(--muted);margin-bottom:12px;}
+  .form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+  .form-group{display:flex;flex-direction:column;gap:4px;}
+  .form-group label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+  .form-group input,.form-group select{background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 12px;
+    border-radius:var(--radius);outline:none;transition:border-color .15s;}
+  .form-group input:focus,.form-group select:focus{border-color:var(--accent);}
+  .form-group select option{background:var(--surface2);}
+  .type-toggle{display:flex;}
+  .type-btn{padding:8px 16px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;
+    cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);transition:all .15s;}
+  .type-btn:first-child{border-radius:var(--radius) 0 0 var(--radius);}
+  .type-btn:last-child{border-radius:0 var(--radius) var(--radius) 0;border-left:0;}
+  .type-btn.active-e{background:var(--income);color:#fff;border-color:var(--income);}
+  .type-btn.active-d{background:var(--expense);color:#fff;border-color:var(--expense);}
+  .btn{padding:8px 20px;border-radius:var(--radius);font-family:'Syne',sans-serif;font-size:13px;
+    font-weight:700;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-primary:hover{background:#79B8FF;}
+  .btn-success{background:var(--income);color:#fff;}
+  .btn-success:hover{filter:brightness(1.1);}
+  .btn-ls{background:var(--ls);color:#fff;}
+  .btn-ls:hover{filter:brightness(1.1);}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  .btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+  .btn-danger-sm{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px 6px;
+    border-radius:4px;font-size:12px;transition:all .15s;}
+  .btn-danger-sm:hover{color:var(--expense);background:var(--rd-bg);}
+  .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+  .stat-value{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;}
+  .stat-value.positive{color:var(--income);}
+  .stat-value.negative{color:var(--expense);}
+  .stat-value.neutral{color:var(--accent);}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+  .table-header-bar{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid var(--border);}
+  .table-title{font-size:13px;font-weight:700;}
+  .ops-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;}
+  thead th{background:var(--surface2);padding:6px 12px;font-size:10px;font-weight:700;
+    text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--surface2);}
+  tbody td{padding:4px 12px;font-size:12px;}
+  .td-date{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;}
+  .td-date-input{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);background:var(--surface2);
+    border:1px solid var(--border);border-radius:5px;padding:3px 6px;width:120px;outline:none;}
+  .td-date-input:focus{border-color:var(--accent);}
+  .td-solde{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:right;white-space:nowrap;color:var(--muted);}
+  .td-solde.positive{color:var(--income);}
+  .td-solde.negative{color:var(--expense);}
+  .drag-handle{cursor:grab;color:var(--muted);font-size:13px;padding:0 6px;user-select:none;}
+  .drag-handle:active{cursor:grabbing;}
+  tbody tr.op-row{transition:background .12s,opacity .12s;background:var(--week-bg,transparent);}
+  tbody tr.op-row.dragging{opacity:.4;}
+  tbody tr.op-row.drag-over{background:var(--surface3);box-shadow:inset 0 2px 0 var(--accent);}
+  .month-btn.drag-target{background:var(--accent) !important;color:#000 !important;border-left-color:var(--accent) !important;}
+  .td-svc{font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 9px;border-radius:10px;display:inline-block;}
+  .td-amount{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:right;white-space:nowrap;}
+  .td-amount.e{color:var(--income);}
+  .td-amount.d{color:var(--expense);}
+  .type-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;}
+  .type-badge.e{background:#0D2D1E;color:var(--income);}
+  .type-badge.d{background:var(--rd-bg);color:var(--expense);}
+  .empty-state{text-align:center;padding:48px 24px;color:var(--muted);font-size:14px;}
+  .empty-icon{font-size:32px;margin-bottom:8px;}
+
+  /* ── LS Module ── */
+  .ls-banner{background:linear-gradient(135deg,#0D2D1E,#0D2040);border:1px solid var(--ls);
+    border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;
+    gap:24px;flex-wrap:wrap;}
+  .ls-banner-item{display:flex;flex-direction:column;gap:2px;}
+  .ls-banner-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .ls-banner-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--ls);}
+  .fact-alert{background:#2D2200;border:1px solid var(--lm);border-radius:var(--radius);
+    padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;}
+  .ls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px;}
+  .loc-card{background:var(--surface);border:1px solid #1A3A28;border-radius:10px;padding:16px;transition:border-color .2s;}
+  .loc-card:hover{border-color:var(--ls);}
+  .loc-card.inactive{opacity:.5;border-color:var(--border);}
+  .loc-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+  .loc-name{font-size:14px;font-weight:800;}
+  .loc-site{font-size:11px;color:var(--muted);margin-top:2px;}
+  .loc-status{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;}
+  .loc-status.active{background:#0D2D1E;color:var(--income);}
+  .loc-status.inactive{background:var(--surface3);color:var(--muted);}
+  .loc-details{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:12px;}
+  .loc-detail-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+  .loc-detail-val{font-family:'DM Mono',monospace;font-weight:500;}
+  .loc-billing{background:var(--surface2);border-radius:6px;padding:10px;margin-bottom:10px;}
+  .loc-billing-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ls);margin-bottom:6px;}
+  .billing-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:5px;}
+  .billing-row:last-child{margin-bottom:0;}
+  .bill-date{font-family:'DM Mono',monospace;color:var(--muted);}
+  .bill-amount{font-family:'DM Mono',monospace;font-weight:700;color:var(--income);}
+  .bill-status-btn{font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px;cursor:pointer;
+    border:none;font-family:'Syne',sans-serif;transition:all .15s;}
+  .bill-pending{background:#2D2200;color:var(--lm);}
+  .bill-pending:hover{background:var(--lm);color:#000;}
+  .bill-received{background:#0D2D1E;color:var(--income);cursor:default;}
+  .loc-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .loc-action-btn{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;
+    font-family:'Syne',sans-serif;border:1px solid;transition:all .15s;}
+  .totals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px;}
+  .svc-total-card{border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border);}
+  .svc-total-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .svc-total-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;}
+  .svc-total-row span:first-child{color:var(--muted);}
+  .svc-total-net{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;font-weight:700;font-size:13px;}
+  .export-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 20px;margin-top:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .export-info{flex:1;min-width:200px;}
+  .export-title{font-size:14px;font-weight:700;margin-bottom:2px;}
+  .export-sub{font-size:12px;color:var(--muted);}
+  .notif{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);
+    border-radius:var(--radius);padding:12px 18px;font-size:13px;font-weight:600;
+    transform:translateY(80px);opacity:0;transition:all .3s;z-index:200;}
+  .notif.show{transform:translateY(0);opacity:1;}
+  .notif.success{border-color:var(--income);color:var(--income);}
+  .notif.error{border-color:var(--expense);color:var(--expense);}
+  #loading-overlay{display:none;position:fixed;inset:0;background:rgba(13,17,23,.85);z-index:300;
+    align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+  #loading-overlay.show{display:flex;}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media(max-width:768px){.sidebar{display:none;}.main{padding:16px;}.form-row{flex-direction:column;}.stats-bar{grid-template-columns:1fr 1fr;}}
+
+  /* Airtable sync */
+  .drive-bar{display:flex;align-items:center;gap:10px;padding:6px 16px;background:#0D1F0D;border-bottom:1px solid #1A3A1A;font-size:12px;}
+  .drive-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .drive-dot.ok{background:var(--income);}
+  .drive-dot.warn{background:var(--lm);}
+  .drive-dot.err{background:var(--rd);}
+  .drive-dot.idle{background:var(--border2);}
+  .drive-status{color:var(--muted);flex:1;}
+  .drive-config{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 0;max-width:520px;}
+  .drive-config-title{font-size:13px;font-weight:700;color:var(--ls);margin-bottom:12px;}
+  .sync-spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+</style>
+</head>
+<body>
+<div id="loading-overlay"><div class="spinner"></div><div style="color:var(--muted);font-size:14px">Génération…</div></div>
+<header class="app-header">
+  <div class="app-logo">Tréso<span>2026</span></div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="showFactureFournisseurPanel()">🧾 Facture fournisseur</button>
+    <button class="btn btn-ghost" onclick="showAirtableConfigPanel()">⚙ Airtable</button>
+    <button class="btn btn-ghost" id="btn-at-sync-chantiers" onclick="syncChantiers()">🏗 Sync Chantiers</button>
+    <button class="btn btn-ghost" style="border-color:var(--rd);color:var(--rd)" title="Déplace toute ligne rangée dans un mois qui ne correspond pas à sa date réelle, sur toute l'année" onclick="if(confirm('Vérifier et corriger le rangement mois/date sur toute l\'année ?'))reparerCoherenceDates()">🔧 Vérifier mois/dates</button>
+    <button class="btn btn-ghost" id="btn-at-save" onclick="airtableSaveAll()">☁ Sauvegarder</button>
+    <button class="btn btn-ghost" onclick="exportData()">💾 Local</button>
+    <button class="btn btn-success" onclick="generateExcel()">📊 Générer Excel</button>
+  </div>
+</header>
+<div class="drive-bar" id="at-bar">
+  <div class="drive-dot idle" id="at-dot"></div>
+  <span class="drive-status" id="at-status">Airtable non configuré</span>
+  <span id="at-last-sync" style="font-size:11px;color:var(--muted)"></span>
+</div>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Navigation</div>
+    <button class="month-btn active" data-month="0" onclick="switchView('annual',this)">
+      Vue annuelle <span class="month-badge" id="badge-0">0</span>
+    </button>
+    <button class="month-btn ls-btn" data-month="ls" onclick="switchView('ls',this)">
+      🏠 Locations LS <span class="month-badge" id="badge-ls">0</span>
+    </button>
+    <button class="month-btn dc-btn" data-month="dc" onclick="switchView('dc',this)">
+      &#x1F4CB; Dettes &amp; Charges <span class="month-badge" id="badge-dc">0</span>
+    </button>
+    <button class="month-btn hist-btn" data-month="hist" onclick="switchView('hist',this)">
+      🕐 Historique
+    </button>
+    <button class="month-btn marge-btn" data-month="marge" onclick="switchView('marge',this)">
+      📊 Marge &amp; Résultat
+    </button>
+    <div class="sidebar-label" style="margin-top:8px">Mois 2026</div>
+    <div id="month-nav"></div>
+    <button class="month-btn cc-btn" data-month="cc" onclick="switchView('cc',this)" style="margin-top:8px">
+      🏦 Compte Courant <span class="month-badge" id="badge-cc" style="width:auto;padding:3px 10px;border-radius:10px;font-size:12px">0 €</span>
+    </button>
+  </aside>
+  <main class="main"><div id="page-content"></div></main>
+</div>
+<div id="notif" class="notif"></div>
+
+<script>
+const MONTHS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const SERVICES=[
+  {code:"PRGO",label:"Prestations Grand Ouest",color:"var(--prgo)",bg:"var(--prgo-bg)"},
+  {code:"LS",  label:"Location Site",          color:"var(--ls)",  bg:"var(--ls-bg)"},
+  {code:"LM",  label:"Location Matérielle",    color:"var(--lm)",  bg:"var(--lm-bg)"},
+  {code:"LMPM",label:"Prest. Le Mans/Perche/May",color:"var(--lmpm)",bg:"var(--lmpm-bg)"},
+  {code:"VM",  label:"Vente Matérielle",       color:"var(--vm)",  bg:"var(--vm-bg)"},
+  {code:"FG",  label:"Frais Généraux",         color:"var(--fg)",  bg:"var(--fg-bg)"},
+  {code:"RD",  label:"Remboursement Dettes",   color:"var(--rd)",  bg:"var(--rd-bg)"},
+  {code:"CC",  label:"Compte Courant Carole",  color:"var(--cc)",  bg:"var(--cc-bg)"},
+];
+
+let data={};
+let lsData={locataires:[],factures:{}};
+let dcData={
+  dettes:[],     // [{id,nom,credancier,montantTotal,montantPaye,mensualite,dateDebut,notes}]
+  charges:[]     // [{id,nom,type:'mensuelle'|'trimestrielle'|'annuelle',montant,mois:[],organisme,notes,historique:[{mois,paye,date}]}]
+};
+for(let m=1;m<=12;m++){data[m]={};SERVICES.forEach(s=>data[m][s.code]=[]);}
+
+let view="annual"; // "annual"|"ls"|1..12
+let currentSvc="ALL";
+let formType="E";
+const TVA_RATES=[
+  {value:20,label:"20 %"},
+  {value:10,label:"10 %"},
+  {value:5.5,label:"5,5 %"},
+  {value:2.1,label:"2,1 %"},
+  {value:0,label:"Sans TVA"},
+  {value:"libre",label:"✎ Saisie libre du montant"}
+];
+let collaborateurs = JSON.parse(localStorage.getItem('treso_collaborateurs')||'null') || ['Julien','Jonathan','Jérôme','Carole','Raynald'];
+function saveCollaborateurs(){localStorage.setItem('treso_collaborateurs', JSON.stringify(collaborateurs));}
+let benefFieldOpen=false;
+let diagMonth=8;
+let __ordreSeq=Date.now(); // compteur strictement croissant — évite les égalités de tri quand plusieurs lignes sont créées la même milliseconde (ex: Générer jusqu'à décembre)
+function nextOrdre(){return ++__ordreSeq;}
+let opsSearchQuery='';
+let chargeSearchQuery='';
+let __searchDebounceTimer=null;
+function handleSearchInput(varName, val, inputId){
+  if(varName==='ops')opsSearchQuery=val; else chargeSearchQuery=val;
+  if(__searchDebounceTimer)clearTimeout(__searchDebounceTimer);
+  __searchDebounceTimer=setTimeout(()=>{
+    render();
+    const inp=document.getElementById(inputId);
+    if(inp){inp.focus();const p=inp.value.length;inp.setSelectionRange(p,p);}
+  },350);
+}
+function toggleBenefField(){benefFieldOpen=!benefFieldOpen;render();}
+function handleBenefSelect(sel){
+  if(sel.value==='__new__'){
+    const name=prompt('Nom du nouveau collaborateur :');
+    if(name && name.trim() && !collaborateurs.includes(name.trim())){
+      const clean=name.trim();
+      collaborateurs.push(clean);
+      saveCollaborateurs();
+      notify(`Collaborateur "${clean}" ajouté à la liste`,"success");
+      pushCollaborateurToAirtable(clean);
+      render();
+    } else {
+      sel.value='';
+    }
+  }
+}
+async function pushCollaborateurToAirtable(nom){
+  if(!airtableState.token||!airtableState.base)return; // pas encore configuré, restera local pour l'instant
+  try{
+    await atCreateAll(AT_TABLES.collaborateurs, [{Nom:nom}]);
+  }catch(e){
+    notify('Collaborateur ajouté localement, mais échec de sync Airtable : '+e.message,'error');
+  }
+}
+let lsAddMode=false;
+let dcAddMode=null; // null|'dette'|'charge'
+let dcSection='all'; // 'all'|'dettes'|'mensuelles'|'trimestrielles'
+let lsMonthKey=`2026-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+
+function initNav(){
+  const nav=document.getElementById("month-nav");
+  MONTHS.forEach((m,i)=>{
+    nav.innerHTML+=`<button class="month-btn" data-month="${i+1}" onclick="switchView(${i+1},this)"
+      ondragover="monthDragOver(event)" ondragleave="monthDragLeave(event)" ondrop="monthDrop(event,${i+1})">${m} <span class="month-badge" id="badge-${i+1}">0</span></button>`;
+  });
+  render();
+}
+
+function updateBadges(){
+  for(let m=1;m<=12;m++){
+    let t=0;SERVICES.forEach(s=>t+=(data[m][s.code]||[]).length);
+    const b=document.getElementById(`badge-${m}`);if(b)b.textContent=t;
+  }
+  let g=0;for(let m=1;m<=12;m++)SERVICES.forEach(s=>g+=(data[m][s.code]||[]).length);
+  const b0=document.getElementById("badge-0");if(b0)b0.textContent=g;
+  const bls=document.getElementById("badge-ls");
+  if(bls)bls.textContent=lsData.locataires.filter(l=>l.actif).length;
+  const bdc=document.getElementById("badge-dc");
+  if(bdc)bdc.textContent=dcData.dettes.length+dcData.charges.length;
+  const bcc=document.getElementById("badge-cc");
+  if(bcc)bcc.textContent=fmt(ccReservoirSolde());
+}
+
+function switchView(v,btn){
+  view=v;lsAddMode=false;
+  document.querySelectorAll(".month-btn").forEach(b=>b.classList.remove("active"));
+  if(btn)btn.classList.add("active");
+  render();
+}
+
+function render(){
+  if(view==="annual")renderAnnual();
+  else if(view==="ls")renderLS();
+  else if(view==="dc")renderDC();
+  else if(view==="hist")renderHistorique();
+  else if(view==="marge")renderMarge();
+  else if(view==="cc")renderCC();
+  else if(view==="diag")renderDiagnostic(diagMonth||8);
+  else renderMonth(view);
+}
+
+// ══════════════════════════════════════════════
+// LS DASHBOARD
+// ══════════════════════════════════════════════
+function renderLS(){
+  const actifs=lsData.locataires.filter(l=>l.actif);
+  const total15=actifs.reduce((s,l)=>s+parseFloat(l.loyer15||0),0);
+  const total25=actifs.reduce((s,l)=>s+parseFloat(l.loyer25||0),0);
+  const alertes=getPending(lsMonthKey);
+
+  let h=`<div class="page-title">🏠 Locations — Tableau de bord LS</div>
+  <div class="page-sub">${actifs.length} locataire(s) actif(s) · Facturation les 15 et 25 du mois</div>
+  <div class="ls-banner">
+    <div class="ls-banner-item"><span class="ls-banner-label">Actifs</span><span class="ls-banner-val">${actifs.length}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Total 15e</span><span class="ls-banner-val">${fmt(total15)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Total 25e</span><span class="ls-banner-val">${fmt(total25)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Mensuel théorique</span><span class="ls-banner-val">${fmt(total15+total25)}</span></div>
+    <div style="margin-left:auto"><button class="btn btn-ls" onclick="lsAddMode=true;render()">+ Nouveau locataire</button></div>
+  </div>`;
+
+  if(alertes.length>0) h+=`<div class="fact-alert">⏰ &nbsp;<strong>${alertes.length} loyer(s) en attente d'encaissement</strong> ce mois-ci — ${alertes.map(a=>`${a.nom} (${a.echeance}e : ${fmt(a.montant)})`).join(', ')}</div>`;
+
+  if(lsAddMode) h+=`
+  <div class="add-card" style="border-color:var(--ls)">
+    <div class="add-card-title" style="color:var(--ls)">+ Nouveau locataire</div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1;min-width:170px"><label>Nom / Raison sociale</label><input type="text" id="ls-nom" placeholder="Nom du locataire"></div>
+      <div class="form-group" style="flex:1;min-width:140px"><label>Site / Emplacement</label><input type="text" id="ls-site" placeholder="Ex: Site A – Box 3"></div>
+      <div class="form-group"><label>Loyer 15e (€)</label><input type="number" id="ls-l15" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>Loyer 25e (€)</label><input type="number" id="ls-l25" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>Date d'entrée</label><input type="date" id="ls-entree" value="${todayStr()}" style="width:145px"></div>
+      <div class="form-group" style="flex:1;min-width:160px"><label>Notes (caution…)</label><input type="text" id="ls-notes" placeholder="Informations complémentaires"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-ls" onclick="addLocataire()">✓ Enregistrer</button>
+      <button class="btn btn-ghost" onclick="lsAddMode=false;render()">Annuler</button>
+    </div>
+  </div>`;
+
+  // Sélecteur mois facturation
+  h+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px">Mois de facturation :</span>
+    <select id="ls-msel" onchange="lsMonthKey=this.value;render()"
+      style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:6px 10px;border-radius:var(--radius);outline:none">
+      ${MONTHS.map((mn,i)=>{const k=`2026-${String(i+1).padStart(2,'0')}`;return`<option value="${k}" ${k===lsMonthKey?'selected':''}>${mn} 2026</option>`;}).join('')}
+    </select>
+    <button class="btn btn-ls" style="padding:6px 16px;font-size:12px" onclick="genererMois()">⚡ Générer factures du mois</button>
+  </div>`;
+
+  if(lsData.locataires.filter(l=>l.actif).length===0){
+    h+=`<div class="empty-state"><div class="empty-icon">🏠</div>Aucun locataire actif. Cliquez "+ Nouveau locataire" pour commencer.</div>`;
+  } else {
+    h+=`<div class="ls-grid">`;
+    lsData.locataires.filter(l=>l.actif).forEach(loc=>{h+=locCard(loc,lsMonthKey);});
+    h+=`</div>`;
+  }
+
+  const inactifs=lsData.locataires.filter(l=>!l.actif);
+  if(inactifs.length>0){
+    h+=`<div class="section-title">Anciens locataires</div>
+    <div class="table-wrap"><table><thead><tr><th>Nom</th><th>Site</th><th>Entrée</th><th>Sortie</th><th>Action</th></tr></thead><tbody>
+    ${inactifs.map(l=>`<tr>
+      <td style="color:var(--muted)">${l.nom}</td><td style="color:var(--muted)">${l.site||'—'}</td>
+      <td class="td-date">${l.dateEntree||'—'}</td><td class="td-date">${l.dateSortie||'—'}</td>
+      <td><button onclick="reactiver('${l.id}')" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:700">Réactiver</button></td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+  }
+
+  document.getElementById("page-content").innerHTML=h;
+}
+
+function locCard(loc,mKey){
+  const facs=(lsData.factures[loc.id]||{})[mKey]||[];
+  const f15=facs.find(f=>f.echeance===15);
+  const f25=facs.find(f=>f.echeance===25);
+
+  const billLine=(ech,loyer,fac)=>{
+    if(!loyer||parseFloat(loyer)<=0) return '';
+    if(!fac) return `<div class="billing-row"><span class="bill-date">Le ${ech}</span><span class="bill-amount">${fmt(parseFloat(loyer))}</span><span style="font-size:10px;color:var(--muted);font-style:italic">Non générée</span></div>`;
+    const isR=fac.statut==='received';
+    return `<div class="billing-row">
+      <span class="bill-date">Le ${ech}</span>
+      <span class="bill-amount">${fmt(fac.montant)}</span>
+      ${isR?`<span class="bill-status-btn bill-received">✓ Encaissé</span>`
+           :`<button class="bill-status-btn bill-pending" onclick="encaisser('${loc.id}','${mKey}',${ech})">Marquer encaissé</button>`}
+    </div>`;
+  };
+
+  return `<div class="loc-card">
+    <div class="loc-card-header">
+      <div><div class="loc-name">${loc.nom}</div><div class="loc-site">${loc.site||'—'}</div></div>
+      <span class="loc-status active">Actif</span>
+    </div>
+    <div class="loc-details">
+      <div><div class="loc-detail-label">Entrée</div><div class="loc-detail-val">${loc.dateEntree||'—'}</div></div>
+      <div><div class="loc-detail-label">Sortie prévue</div><div class="loc-detail-val">${loc.dateSortie||'En cours'}</div></div>
+      <div><div class="loc-detail-label">Loyer 15e</div><div class="loc-detail-val" style="color:var(--ls)">${fmt(parseFloat(loc.loyer15||0))}</div></div>
+      <div><div class="loc-detail-label">Loyer 25e</div><div class="loc-detail-val" style="color:var(--ls)">${fmt(parseFloat(loc.loyer25||0))}</div></div>
+    </div>
+    ${(f15||f25||(loc.loyer15>0||loc.loyer25>0))?`<div class="loc-billing">
+      <div class="loc-billing-title">Facturation — ${mKey}</div>
+      ${billLine(15,loc.loyer15,f15)}
+      ${billLine(25,loc.loyer25,f25)}
+    </div>`:''}
+    ${loc.notes?`<div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-style:italic">📝 ${loc.notes}</div>`:''}
+    <div class="loc-actions">
+      <button class="loc-action-btn" style="color:var(--rd);border-color:var(--rd);background:var(--rd-bg)" onclick="sortir('${loc.id}')">Départ</button>
+      <button class="loc-action-btn" style="color:var(--muted);border-color:var(--border);background:var(--surface2)" onclick="delLoc('${loc.id}')">Supprimer</button>
+    </div>
+  </div>`;
+}
+
+function addLocataire(){
+  const nom=document.getElementById("ls-nom").value.trim();
+  const site=document.getElementById("ls-site").value.trim();
+  const l15=parseFloat(document.getElementById("ls-l15").value)||0;
+  const l25=parseFloat(document.getElementById("ls-l25").value)||0;
+  const ent=document.getElementById("ls-entree").value;
+  const notes=document.getElementById("ls-notes").value.trim();
+  if(!nom){notify("Nom requis","error");return;}
+  if(l15===0&&l25===0){notify("Au moins un loyer requis","error");return;}
+  lsData.locataires.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),nom,site,loyer15:l15,loyer25:l25,dateEntree:ent,dateSortie:'',actif:true,notes});
+  lsAddMode=false;updateBadges();render();
+  notify(`Locataire "${nom}" ajouté`,"success");
+}
+
+function sortir(id){
+  const loc=lsData.locataires.find(l=>l.id===id);if(!loc)return;
+  const d=prompt(`Date de sortie de ${loc.nom} :`,todayStr());if(d===null)return;
+  loc.actif=false;loc.dateSortie=d;updateBadges();render();
+  notify(`${loc.nom} — départ enregistré`,"success");
+}
+
+function reactiver(id){
+  const loc=lsData.locataires.find(l=>l.id===id);if(!loc)return;
+  loc.actif=true;loc.dateSortie='';updateBadges();render();
+  notify(`${loc.nom} réactivé`,"success");
+}
+
+function delLoc(id){
+  const loc=lsData.locataires.find(l=>l.id===id);
+  if(!loc||!confirm(`Supprimer ${loc.nom} définitivement ?`))return;
+  lsData.locataires=lsData.locataires.filter(l=>l.id!==id);
+  delete lsData.factures[id];updateBadges();render();
+  notify("Locataire supprimé","success");
+}
+
+function genererMois(){
+  const mKey=lsMonthKey;
+  const actifs=lsData.locataires.filter(l=>l.actif);
+  let nb=0;
+  actifs.forEach(loc=>{
+    if(!lsData.factures[loc.id])lsData.factures[loc.id]={};
+    if(!lsData.factures[loc.id][mKey])lsData.factures[loc.id][mKey]=[];
+    const ex=lsData.factures[loc.id][mKey];
+    if(parseFloat(loc.loyer15||0)>0&&!ex.find(f=>f.echeance===15)){ex.push({echeance:15,montant:parseFloat(loc.loyer15),statut:"pending",dateEncaissement:null});nb++;}
+    if(parseFloat(loc.loyer25||0)>0&&!ex.find(f=>f.echeance===25)){ex.push({echeance:25,montant:parseFloat(loc.loyer25),statut:"pending",dateEncaissement:null});nb++;}
+  });
+  render();notify(`${nb} facture(s) générée(s)`,"success");
+}
+
+function encaisser(locId,mKey,echeance){
+  const facs=(lsData.factures[locId]||{})[mKey]||[];
+  const fac=facs.find(f=>f.echeance===echeance);if(!fac)return;
+  fac.statut='received';fac.dateEncaissement=todayStr();
+  const mIdx=parseInt(mKey.split('-')[1]);
+  const loc=lsData.locataires.find(l=>l.id===locId);
+  if(loc){
+    if(!data[mIdx]['LS'])data[mIdx]['LS']=[];
+    data[mIdx]['LS'].push({
+      id:Date.now().toString(36),
+      date:mKey+'-'+String(echeance).padStart(2,'0'),
+      libelle:`Loyer LS — ${loc.nom}${loc.site?' ('+loc.site+')':''} — échéance ${echeance}`,
+      type:'E',montant:fac.montant,ordre:nextOrdre(),origine:'Manuel',chantierRef:''
+    });
+    updateBadges();
+  }
+  render();notify(`Encaissé — ${loc?loc.nom:''} +${fmt(fac.montant)}`,"success");
+}
+
+function getPending(mKey){
+  const r=[];
+  lsData.locataires.filter(l=>l.actif).forEach(loc=>{
+    ((lsData.factures[loc.id]||{})[mKey]||[]).filter(f=>f.statut==='pending').forEach(f=>{
+      r.push({nom:loc.nom,echeance:f.echeance,montant:f.montant});
+    });
+  });
+  return r;
+}
+
+// ══════════════════════════════════════════════
+// VUE MENSUELLE
+// ══════════════════════════════════════════════
+function fmtISOLocal(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getWeeksOfMonth(m){
+  const year=2026;
+  const firstDay=new Date(year,m-1,1);
+  const lastDay=new Date(year,m,0);
+  let d=new Date(firstDay);
+  const dow=(d.getDay()+6)%7; // 0=lundi
+  d.setDate(d.getDate()-dow);
+  const weeks=[];
+  while(d<=lastDay){
+    const weekStart=new Date(d);
+    const weekEnd=new Date(d);weekEnd.setDate(weekEnd.getDate()+6);
+    weeks.push({start:weekStart,end:weekEnd,startStr:fmtISOLocal(weekStart),endStr:fmtISOLocal(weekEnd)});
+    d.setDate(d.getDate()+7);
+  }
+  return weeks;
+}
+function renderMonth(m){
+  const mn=MONTHS[m-1];
+  const ops=getOps(m);
+  const totE=ops.filter(o=>o.type==="E" && o.service!=="CC").reduce((s,o)=>s+o.montant,0);
+  const totD=ops.filter(o=>o.type==="D" && o.service!=="CC").reduce((s,o)=>s+o.montant,0);
+  const mKey=`2026-${String(m).padStart(2,'0')}`;
+  const lsAlert=getPending(mKey);
+
+  const allOpsMonth=computeMonthOps(m); // toutes prestations, indépendant du filtre service, pour la TVA globale
+  const tvaCollecteeEnc=computeTVAMouvementMonth(m,'E');
+  const tvaDeductibleEnc=computeTVAMouvementMonth(m,'D');
+  const tvaADeclarerEnc=tvaCollecteeEnc-tvaDeductibleEnc;
+
+  document.getElementById("page-content").innerHTML=`
+  <div class="page-title">${mn} 2026</div>
+  <div class="page-sub">${ops.length} opération(s) saisie(s)</div>
+  ${lsAlert.length>0?`<div class="fact-alert">🏠 &nbsp;<strong>${lsAlert.length} loyer(s) LS en attente</strong> — <a href="#" onclick="switchView('ls',document.querySelector('.ls-btn'));return false" style="color:var(--ls)">Aller au tableau LS →</a></div>`:''}
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Entrées</div><div class="stat-value positive">${fmt(totE)}</div></div>
+    <div class="stat-card"><div class="stat-label">Sorties</div><div class="stat-value negative">${fmt(totD)}</div></div>
+    <div class="stat-card"><div class="stat-label">Solde net</div><div class="stat-value ${totE-totD>=0?'positive':'negative'}">${fmt(totE-totD)}</div></div>
+  </div>
+  <div class="dc-banner" style="background:linear-gradient(135deg,#0D2D1E,#0D2040);border-color:var(--income)">
+    <div class="ls-banner-item"><span class="ls-banner-label">TVA collectée (encaissée)</span><span class="dc-banner-val" style="color:var(--income)">${fmt(tvaCollecteeEnc)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">TVA déductible (payée)</span><span class="dc-banner-val" style="color:var(--expense)">${fmt(tvaDeductibleEnc)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">TVA due à déclarer</span><span class="dc-banner-val" style="color:${tvaADeclarerEnc>=0?'var(--accent)':'var(--income)'}">${fmt(tvaADeclarerEnc)}${tvaADeclarerEnc<0?' (crédit)':''}</span></div>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6">💡 TVA calculée entièrement sur les mouvements réels (encaissement client / paiement fournisseur), jamais sur la date de facturation. Chaque ligne compte dans le mois de son <em>encaissement/paiement prévu</em>, même si elle a été facturée un autre mois. Pour une ligne sans cette date renseignée, la date de facturation sert de repli.</div>
+  ${(()=>{
+    const enAttente=allOpsMonth.filter(o=>o.type==='E' && o.service!=='CC' && o.dateEncaissement && o.dateEncaissement>todayStr());
+    if(enAttente.length===0)return '';
+    const total=enAttente.reduce((s,o)=>s+o.montant,0);
+    return `<div class="fact-alert" style="border-color:var(--accent)">💰 &nbsp;<strong>${enAttente.length} facture(s) émise(s) mais pas encore encaissée(s)</strong> pour ${fmt(total)} — pour info, cette somme n'est pas encore réellement disponible en trésorerie.</div>`;
+  })()}
+  ${(()=>{
+    const parCollab={};
+    allOpsMonth.filter(o=>o.type==='D' && o.beneficiaire).forEach(o=>{
+      parCollab[o.beneficiaire]=(parCollab[o.beneficiaire]||0)+o.montant;
+    });
+    const noms=Object.keys(parCollab);
+    if(noms.length===0)return '';
+    return `<div class="section-title">👤 Paiements par collaborateur — ${mn}</div>
+    <div class="totals-grid">
+      ${noms.map(n=>`<div class="svc-total-card" style="border-color:var(--accent)">
+        <div class="svc-total-name" style="color:var(--accent)">${n}</div>
+        <div class="svc-total-net"><span>Total versé</span><span style="color:var(--expense)">${fmt(parCollab[n])}</span></div>
+      </div>`).join('')}
+    </div>`;
+  })()}
+  <div class="service-tabs">
+    <div class="svc-chip ${currentSvc==='ALL'?'active':''}" data-svc="ALL" onclick="filterSvc('ALL')" style="color:var(--accent);background:#0D2040">Tous</div>
+    ${SERVICES.map(s=>`<div class="svc-chip ${currentSvc===s.code?'active':''}" data-svc="${s.code}" onclick="filterSvc('${s.code}')" style="color:${s.color};background:${s.bg}">${s.code}</div>`).join('')}
+  </div>
+  <div class="add-card">
+    <div class="add-card-title">+ Nouvelle opération</div>
+    <div class="form-row">
+      <div class="form-group"><label>Date de facturation</label><input type="date" id="f-date" value="${todayStr()}" style="width:150px"></div>
+      <div class="form-group"><label>${formType==='E'?'Encaissement prévu':'Paiement prévu'}</label><input type="date" id="f-date-enc" value="${todayStr()}" style="width:150px"></div>
+      <div class="form-group" style="flex:1;min-width:200px"><label>Libellé</label><input type="text" id="f-lib" placeholder="Description…" style="width:100%"></div>
+      <div class="form-group"><label>Service</label>
+        <select id="f-svc" style="width:120px">${SERVICES.map(s=>`<option value="${s.code}" ${currentSvc===s.code&&currentSvc!=='ALL'?'selected':''}>${s.code}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label>Type</label>
+        <div class="type-toggle">
+          <button class="type-btn ${formType==='E'?'active-e':''}" onclick="setType('E')">↑ Entrée</button>
+          <button class="type-btn ${formType==='D'?'active-d':''}" onclick="setType('D')">↓ Sortie</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Montant (€ TTC)</label><input type="number" id="f-amt" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>TVA</label>
+        <select id="f-tva" style="width:140px" onchange="document.getElementById('f-tva-libre-group').style.display=(this.value==='libre')?'flex':'none'">${TVA_RATES.map(r=>`<option value="${r.value}" ${r.value===20?'selected':''}>${r.label}</option>`).join('')}</select>
+      </div>
+      <div class="form-group" id="f-tva-libre-group" style="display:none">
+        <label>Montant TVA (€)</label>
+        <input type="number" id="f-tva-libre" min="0" step="0.01" placeholder="0.00" style="width:110px">
+      </div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="addOp(${m})">Ajouter</button></div>
+    </div>
+    <div style="margin-top:10px">
+      <span style="cursor:pointer;color:var(--accent);font-size:12px;font-weight:600" onclick="toggleBenefField()">
+        ${benefFieldOpen?'▾':'▸'} Bénéficiaire (optionnel — paiement à un collaborateur)
+      </span>
+      ${benefFieldOpen?`<div style="margin-top:8px;max-width:280px">
+        <select id="f-benef" style="width:100%" onchange="handleBenefSelect(this)">
+          <option value="">— Aucun —</option>
+          ${collaborateurs.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          <option value="__new__">+ Ajouter un collaborateur…</option>
+        </select>
+      </div>`:''}
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header-bar">
+      <span class="table-title">Opérations — ${mn}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" title="Recalcule l'ordre chronologique de tri de ce mois (utile si le solde ligne par ligne semble incohérent)" onclick="if(confirm('Réparer l\\'ordre de tri de ${mn} ? Le solde de chaque ligne va se recalculer.'))reparerOrdreMois(${m})">🔧 Réparer l'ordre</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" title="Affiche le calcul du solde ligne par ligne, pour repérer précisément un écart" onclick="diagMonth=${m};view='diag';render()">🔍 Diagnostic</button>
+        <input type="text" id="ops-search-input" placeholder="🔍 Rechercher dans le libellé…" value="${opsSearchQuery}" oninput="handleSearchInput('ops',this.value,'ops-search-input')"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 10px;border-radius:var(--radius);width:220px;outline:none">
+        ${opsSearchQuery?`<button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="opsSearchQuery='';render();">✕</button>`:''}
+        <span class="ops-count">${opsSearchQuery?`${ops.filter(o=>(o.libelle||'').toLowerCase().includes(opsSearchQuery.toLowerCase())).length} / `:''}${ops.length} ligne(s)</span>
+      </div>
+    </div>
+    ${ops.length===0?`<div class="empty-state"><div class="empty-icon">📭</div>Aucune opération pour ${mn}</div>`
+    :`<table><thead><tr><th></th><th title="Vérifié sur le compte bancaire">✓ Banque</th><th>Date factu.</th><th>Encaiss./Paiement prévu</th><th>Service</th><th>Libellé</th><th>Type</th><th style="text-align:right">Montant TTC</th><th style="text-align:center">TVA</th><th style="text-align:right">Montant TVA</th><th style="text-align:right">Solde</th><th></th></tr></thead>
+    <tbody>${(()=>{
+      const opsDisplay=opsSearchQuery?ops.filter(o=>(o.libelle||'').toLowerCase().includes(opsSearchQuery.toLowerCase())):ops;
+      const opRowHtml=(op,weekBg)=>{const s=SERVICES.find(x=>x.code===op.service)||SERVICES[0];
+        const rowBg=op.verifieBanque?(op.service==='CC'?'rgba(56,189,248,0.55)':'rgba(255,122,0,0.62)'):weekBg;
+        return`<tr class="op-row" draggable="true" style="--week-bg:${rowBg}"
+        ondragstart="opDragStart(event,${m},'${op.service}','${op.id}')" ondragend="opDragEnd(event)"
+        ondragover="opRowDragOver(event)" ondragleave="opRowDragLeave(event)" ondrop="opRowDrop(event,${m},'${op.service}','${op.id}')">
+        <td><span class="drag-handle" title="Glisser pour déplacer">⠿</span></td>
+        <td style="text-align:center"><input type="checkbox" title="Vérifié sur le compte bancaire" ${op.verifieBanque?'checked':''} onchange="toggleVerifieBanque(${m},'${op.service}','${op.id}')" style="width:16px;height:16px;cursor:pointer"></td>
+        <td><input type="date" class="td-date-input" value="${op.date||''}" onchange="updateOpDate(${m},'${op.service}','${op.id}',this.value)"></td>
+        <td><input type="date" class="td-date-input" value="${op.dateEncaissement||''}" onchange="updateOpDateEnc(${m},'${op.service}','${op.id}',this.value)" title="${op.type==='E'?'Encaissement prévu':'Paiement prévu'}" style="${op.dateEncaissement && op.dateEncaissement<todayStr()?'border-color:var(--lm)':''}">${op.dateEncaissement && op.dateEncaissement<todayStr()?' <span title="Date dépassée — à vérifier" style="font-size:11px">⏳</span>':''}</td>
+        <td><span class="td-svc" style="color:${s.color};background:${s.bg}">${op.service}</span></td>
+        <td><input type="text" class="td-date-input" style="width:100%;min-width:160px" value="${(op.libelle||'').replace(/"/g,'&quot;')}" onchange="updateOpLibelle(${m},'${op.service}','${op.id}',this.value)">${op.origine==='Chantier'?' <span title="Importé depuis un chantier accepté" style="font-size:11px">🏗</span>':''}${op.origine==='Historique'?' <span title="Ligne historique globale" style="font-size:11px">🕐</span>':''}${op.origine==='Recurrent'?' <span title="Facture récurrente — voir Dettes & Charges" style="font-size:11px">🔁</span>':''}${op.beneficiaire?` <span style="font-size:10px;background:var(--surface3);color:var(--accent);padding:2px 6px;border-radius:4px">👤 ${op.beneficiaire}</span>`:''}</td>
+        <td><span class="type-badge ${op.type.toLowerCase()}">${op.type==='E'?'Entrée':'Sortie'}</span></td>
+        <td class="td-amount ${op.type.toLowerCase()}">${op.type==='E'?'+':'−'} <input type="number" min="0" step="0.01" class="td-date-input" style="width:90px;text-align:right;font-family:'DM Mono',monospace" value="${op.montant}" onchange="updateOpMontant(${m},'${op.service}','${op.id}',this.value)"></td>
+        <td style="text-align:center"><select class="td-date-input" style="width:90px" onchange="updateOpTaux(${m},'${op.service}','${op.id}',this.value)">
+          ${TVA_RATES.map(r=>`<option value="${r.value}" ${r.value===op.taux?'selected':''}>${r.label}</option>`).join('')}
+        </select></td>
+        <td class="td-solde" style="color:var(--muted)">${fmt(op.montantTVA)}${op.taux==='libre'?' <span title="Saisie libre" style="font-size:10px">✎</span>':''}</td>
+        <td class="td-solde ${op.solde>=0?'positive':'negative'}">${fmt(op.solde)}</td>
+        <td><button class="btn-danger-sm" onclick="delOp(${m},'${op.service}','${op.id}')">✕</button></td>
+      </tr>`;};
+
+      const weeks=getWeeksOfMonth(m);
+      const todayStr2=fmtISOLocal(new Date());
+      const weekBands=['var(--surface)','var(--surface3)']; // aplat franc, alterne une semaine sur deux
+      let out='';
+      if(m>1){
+        const soldeDepart=soldeDebutMois(m);
+        const finMoisPrec=new Date(2026,m-1,0); // dernier jour du mois précédent
+        const estAncre=soldeAncrage.mois===m;
+        out+=`<tr style="background:var(--surface3);font-weight:700">
+          <td colspan="10" style="padding:8px 12px;font-size:11px;border-top:2px solid var(--accent)">
+            💰 Solde de trésorerie au ${String(finMoisPrec.getDate()).padStart(2,'0')}/${String(finMoisPrec.getMonth()+1).padStart(2,'0')}/2026 (report ${MONTHS[m-2]})
+            ${estAncre?` <span style="color:var(--accent);font-weight:400;font-size:10px">— fixé manuellement <a href="#" onclick="resetSoldeAncrage();return false" style="color:var(--muted);text-decoration:underline">↺ recalculer automatiquement</a></span>`:''}
+          </td>
+          <td style="border-top:2px solid var(--accent)"><input type="number" step="0.01" class="td-date-input" style="width:110px;text-align:right;font-weight:700;color:${soldeDepart>=0?'var(--income)':'var(--expense)'}" value="${soldeDepart.toFixed(2)}" onchange="setSoldeAncrage(${m},this.value)" title="Modifier le solde de départ de ${MONTHS[m-1]} — les mois suivants recalculeront automatiquement à partir de cette valeur"></td>
+          <td style="border-top:2px solid var(--accent)"></td>
+        </tr>`;
+      }
+      weeks.forEach((w,wi)=>{
+        const weekOps=opsDisplay.filter(o=>o.date>=w.startStr && o.date<=w.endStr);
+        if(weekOps.length===0)return;
+        const wE=weekOps.filter(o=>o.type==='E').reduce((s,o)=>s+o.montant,0);
+        const wD=weekOps.filter(o=>o.type==='D').reduce((s,o)=>s+o.montant,0);
+        const isCurrent=todayStr2>=w.startStr && todayStr2<=w.endStr;
+        const weekBg=weekBands[wi%2];
+        const lbl=(d)=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+        out+=`<tr style="background:rgba(88,166,255,0.28)">
+          <td colspan="12" style="padding:8px 12px;font-size:11px;font-weight:700;border-top:2px solid var(--accent)">
+            📅 Semaine du ${lbl(w.start)} au ${lbl(w.end)} ${isCurrent?'<span style="color:var(--accent)">— semaine en cours</span>':''}
+            &nbsp;·&nbsp; Entrées <span style="color:var(--income)">${fmt(wE)}</span>
+            &nbsp;·&nbsp; Sorties <span style="color:var(--expense)">${fmt(wD)}</span>
+            &nbsp;·&nbsp; Résultat <span style="color:${wE-wD>=0?'var(--income)':'var(--expense)'}">${fmt(wE-wD)}</span>
+          </td>
+        </tr>`;
+        weekOps.forEach(op=>out+=opRowHtml(op,weekBg));
+      });
+      if(!out) out=`<tr><td colspan="12" style="padding:20px;text-align:center;color:var(--muted);font-size:12px">🔍 Aucune ligne ne correspond à "${opsSearchQuery}"</td></tr>`;
+      return out;
+    })()}</tbody></table>
+    <div style="padding:8px 16px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)">💡 Glissez ⠿ pour déplacer une échéance sur une autre ligne (ou sur un mois dans le menu de gauche), ou modifiez la date directement. Montants saisis en TTC — la TVA est recalculée automatiquement selon le taux choisi. Regroupement par semaine du lundi au dimanche.</div>`}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// VUE ANNUELLE
+// ══════════════════════════════════════════════
+function renderAnnual(){
+  const at={};SERVICES.forEach(s=>at[s.code]={E:0,D:0});
+  let gE=0,gD=0;
+  for(let m=1;m<=12;m++)SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>{
+    if(op.type==='E'){at[s.code].E+=op.montant;if(s.code!=='CC')gE+=op.montant;}
+    else{at[s.code].D+=op.montant;if(s.code!=='CC')gD+=op.montant;}
+  }));
+  const md=MONTHS.map((mn,mi)=>{let e=0,d=0;SERVICES.forEach(s=>{if(s.code==='CC')return;(data[mi+1][s.code]||[]).forEach(op=>{if(op.type==='E')e+=op.montant;else d+=op.montant;});});return{name:mn,e,d,solde:e-d};});
+  const lsActifs=lsData.locataires.filter(l=>l.actif);
+  const lsTheo=lsActifs.reduce((s,l)=>s+parseFloat(l.loyer15||0)+parseFloat(l.loyer25||0),0);
+
+  document.getElementById("page-content").innerHTML=`
+  <div class="page-title">Synthèse Annuelle 2026</div>
+  <div class="page-sub">Vue consolidée — tous services</div>
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Entrées</div><div class="stat-value positive">${fmt(gE)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Sorties</div><div class="stat-value negative">${fmt(gD)}</div></div>
+    <div class="stat-card"><div class="stat-label">Solde Net</div><div class="stat-value ${gE-gD>=0?'positive':'negative'}">${fmt(gE-gD)}</div></div>
+    <div class="stat-card"><div class="stat-label">LS mensuel théorique</div><div class="stat-value neutral">${fmt(lsTheo)}</div></div>
+  </div>
+  <div class="section-title">Prestations</div>
+  <div class="dc-banner" style="background:linear-gradient(135deg,#12203a,#1a1030);border-color:var(--prgo)">
+    <div class="ls-banner-item"><span class="ls-banner-label">Entrées (PRGO + LMPM)</span><span class="dc-banner-val" style="color:var(--income)">${fmt(at.PRGO.E+at.LMPM.E)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Sorties (PRGO + LMPM)</span><span class="dc-banner-val" style="color:var(--expense)">${fmt(at.PRGO.D+at.LMPM.D)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Solde net (PRGO + LMPM)</span><span class="dc-banner-val" style="color:${(at.PRGO.E+at.LMPM.E)-(at.PRGO.D+at.LMPM.D)>=0?'var(--income)':'var(--expense)'}">${fmt((at.PRGO.E+at.LMPM.E)-(at.PRGO.D+at.LMPM.D))}</span></div>
+  </div>
+  <div class="section-title">Par service</div>
+  <div class="totals-grid">${['PRGO','LMPM','LS','LM','VM','FG','RD'].map(code=>SERVICES.find(s=>s.code===code)).filter(Boolean).map(s=>{const t=at[s.code];return`
+    <div class="svc-total-card" style="border-color:${s.color}30">
+      <div class="svc-total-name" style="color:${s.color}">${s.code} — ${s.label}</div>
+      <div class="svc-total-row"><span>Entrées</span><span style="color:var(--income);font-family:'DM Mono',monospace">${fmt(t.E)}</span></div>
+      <div class="svc-total-row"><span>Sorties</span><span style="color:var(--expense);font-family:'DM Mono',monospace">${fmt(t.D)}</span></div>
+      <div class="svc-total-net"><span>Solde net</span><span style="color:${t.E-t.D>=0?'var(--income)':'var(--expense)'};font-family:'DM Mono',monospace">${fmt(t.E-t.D)}</span></div>
+    </div>`;}).join('')}</div>
+  <div class="section-title">Par mois</div>
+  <div class="table-wrap"><table><thead><tr><th>Mois</th><th style="text-align:right;color:var(--income)">Entrées</th><th style="text-align:right;color:var(--expense)">Sorties</th><th style="text-align:right">Solde</th><th style="text-align:right">Cumul</th></tr></thead>
+  <tbody>${(()=>{let c=0;return md.map(x=>{c+=x.solde;return`<tr>
+    <td style="font-weight:700">${x.name}</td>
+    <td class="td-amount e">${fmt(x.e)}</td>
+    <td class="td-amount d">${fmt(x.d)}</td>
+    <td class="td-amount ${x.solde>=0?'e':'d'}">${fmt(x.solde)}</td>
+    <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:${c>=0?'var(--accent)':'var(--expense)'}">${fmt(c)}</td>
+  </tr>`;}).join('');})()}</tbody></table></div>
+  <div class="export-card">
+    <div class="export-info"><div class="export-title">📊 Générer le fichier Excel complet</div><div class="export-sub">12 onglets mensuels + synthèse + données LS</div></div>
+    <button class="btn btn-success" onclick="generateExcel()">⬇ Télécharger Excel 2026</button>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// OPS CRUD
+// ══════════════════════════════════════════════
+let soldeAncrage=JSON.parse(localStorage.getItem('treso_solde_ancrage')||'null')||{mois:null,montant:0};
+function saveSoldeAncrage(){localStorage.setItem('treso_solde_ancrage', JSON.stringify(soldeAncrage));}
+function setSoldeAncrage(m,val){
+  const parsed=parseFloat(val);
+  if(isNaN(parsed)){notify('Montant invalide','error');render();return;}
+  soldeAncrage={mois:m,montant:parsed};
+  saveSoldeAncrage();render();
+  notify(`Solde de départ de ${MONTHS[m-1]} fixé à ${fmt(parsed)} — les mois suivants recalculent automatiquement à partir de là`,'success');
+}
+function resetSoldeAncrage(){
+  soldeAncrage={mois:null,montant:0};
+  saveSoldeAncrage();render();
+  notify('Solde de départ recalculé automatiquement depuis janvier','success');
+}
+function soldeDebutMois(m){
+  // Solde cumulé de toutes les opérations (tous services, y compris CC), depuis janvier
+  // OU depuis un ancrage manuel si l'utilisateur en a fixé un (utile en phase de démarrage,
+  // quand le suivi des mois précédents n'était pas encore fiable).
+  const depart=(soldeAncrage.mois && soldeAncrage.mois<=m)?soldeAncrage.mois:1;
+  let solde=(soldeAncrage.mois && soldeAncrage.mois<=m)?soldeAncrage.montant:0;
+  for(let mm=depart;mm<m;mm++){
+    SERVICES.forEach(s=>(data[mm][s.code]||[]).forEach(op=>{
+      solde += op.type==='E' ? op.montant : -op.montant;
+    }));
+  }
+  return solde;
+}
+function computeMonthOps(m){
+  // Liste complète du mois (toutes prestations), triée chronologiquement, avec solde cumulé + TVA
+  let all=[];
+  SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>all.push({...op,service:s.code,ordre:op.ordre||0})));
+  all.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.ordre-b.ordre));
+  let running=soldeDebutMois(m);
+  all.forEach(o=>{
+    running+=(o.type==='E'?o.montant:-o.montant);
+    o.solde=running;
+    if(o.taux==='libre'){
+      o.montantTVA=parseFloat(o.montantTVAManuel||0);
+      o.montantHT=o.montant-o.montantTVA;
+    } else {
+      const taux=(o.taux===0||o.taux)?o.taux:20;
+      o.taux=taux;
+      o.montantHT=taux>0?o.montant/(1+taux/100):o.montant;
+      o.montantTVA=o.montant-o.montantHT;
+    }
+  });
+  return all;
+}
+function computeTVAMouvementMonth(m,type){
+  // Parcourt les opérations de TOUS les mois (Entrées ou Sorties selon `type`) et retient
+  // celles dont la date d'encaissement/paiement prévue (ou, à défaut, la date de
+  // facturation) tombe dans le mois m — c'est cette date qui pilote la TVA, jamais la facturation seule.
+  let total=0;
+  for(let mm=1;mm<=12;mm++){
+    const ops=computeMonthOps(mm);
+    ops.filter(o=>o.type===type && o.service!=='CC').forEach(o=>{
+      const mvtDate=o.dateEncaissement||o.date;
+      if(!mvtDate)return;
+      const mvtMonth=parseInt(mvtDate.split('-')[1],10);
+      if(mvtMonth===m) total+=o.montantTVA;
+    });
+  }
+  return total;
+}
+function getOps(m){
+  let ops=computeMonthOps(m);
+  if(currentSvc!=="ALL")ops=ops.filter(o=>o.service===currentSvc);
+  return ops;
+}
+function addOp(mVue){
+  const date=document.getElementById("f-date").value;
+  const dateEncEl=document.getElementById("f-date-enc");
+  const dateEncaissement=dateEncEl?dateEncEl.value:'';
+  const lib=document.getElementById("f-lib").value.trim();
+  const svc=document.getElementById("f-svc").value;
+  const amt=parseFloat(document.getElementById("f-amt").value);
+  const tauxRaw=document.getElementById("f-tva").value;
+  const taux=(tauxRaw==='libre')?'libre':parseFloat(tauxRaw);
+  const montantTVAManuel=(tauxRaw==='libre')?parseFloat(document.getElementById('f-tva-libre').value)||0:0;
+  const benefEl=document.getElementById("f-benef");
+  const beneficiaire=(benefEl && benefEl.value!=='__new__')?benefEl.value:'';
+  if(!lib){notify("Libellé requis","error");return;}
+  if(!amt||amt<=0){notify("Montant invalide","error");return;}
+  if(taux==='libre' && montantTVAManuel<=0){notify("Montant de TVA requis pour la saisie libre","error");return;}
+  if(!date){notify("Date requise","error");return;}
+  const m=parseInt(date.split('-')[1],10)||mVue; // range selon la date saisie, pas la page affichée
+  if(!data[m])data[m]={};
+  if(!data[m][svc])data[m][svc]=[];
+  data[m][svc].push({id:Date.now().toString(36),date,dateEncaissement,libelle:lib,type:formType,montant:amt,taux,montantTVAManuel,beneficiaire,ordre:nextOrdre(),origine:'Manuel',chantierRef:''});
+  document.getElementById("f-lib").value="";document.getElementById("f-amt").value="";
+  updateBadges();render();
+  if(m!==mVue){
+    notify(`${svc} — ${formType==='E'?'Entrée':'Sortie'} ${fmt(amt)} — rangée dans ${MONTHS[m-1]} (date saisie), pas ${MONTHS[mVue-1]}`,"success");
+  } else {
+    notify(`${svc} — ${formType==='E'?'Entrée':'Sortie'} ${fmt(amt)}`,"success");
+  }
+}
+function delOp(m,svc,id){data[m][svc]=(data[m][svc]||[]).filter(o=>o.id!==id);updateBadges();render();}
+
+// ══════════════════════════════════════════════
+// DÉPLACEMENT DES OPÉRATIONS (édition date + drag&drop)
+// ══════════════════════════════════════════════
+let dragOp=null; // {m,svc,id}
+
+function findOp(m,svc,id){
+  const arr=data[m]&&data[m][svc]||[];
+  return arr.find(o=>o.id===id);
+}
+
+// -- Modifier la date directement (change de mois si besoin) --
+function updateOpDate(m,svc,id,newDate){
+  if(!newDate)return;
+  const op=findOp(m,svc,id);if(!op)return;
+  const newMonth=parseInt(newDate.split('-')[1],10);
+  op.date=newDate;
+  if(newMonth!==m){
+    data[m][svc]=data[m][svc].filter(o=>o.id!==id);
+    if(!data[newMonth][svc])data[newMonth][svc]=[];
+    data[newMonth][svc].push(op);
+    updateBadges();render();
+    notify(`Déplacé vers ${MONTHS[newMonth-1]} — ${op.libelle}`,"success");
+  } else {
+    updateBadges();render();
+  }
+}
+function updateOpDateEnc(m,svc,id,newDate){
+  const op=findOp(m,svc,id);if(!op)return;
+  op.dateEncaissement=newDate;
+  updateBadges();render();
+}
+function updateOpLibelle(m,svc,id,newLibelle){
+  const op=findOp(m,svc,id);if(!op)return;
+  const val=newLibelle.trim();
+  if(!val){notify('Le libellé ne peut pas être vide','error');render();return;}
+  op.libelle=val;
+  render();
+}
+function updateOpMontant(m,svc,id,newMontant){
+  const op=findOp(m,svc,id);if(!op)return;
+  const val=parseFloat(newMontant);
+  if(!val||val<=0){notify('Montant invalide','error');render();return;}
+  op.montant=val;
+  updateBadges();render();
+}
+function toggleVerifieBanque(m,svc,id){
+  const op=findOp(m,svc,id);if(!op)return;
+  op.verifieBanque=!op.verifieBanque;
+  render();
+}
+function updateOpTaux(m,svc,id,newTaux){
+  const op=findOp(m,svc,id);if(!op)return;
+  if(newTaux==='libre'){
+    const val=prompt(`Montant de TVA (€) pour "${op.libelle}" :`, op.montantTVAManuel||'');
+    if(val===null)return; // annulé, on ne change rien
+    const parsed=parseFloat(val);
+    if(!parsed||parsed<0){notify('Montant de TVA invalide','error');return;}
+    op.taux='libre';
+    op.montantTVAManuel=parsed;
+  } else {
+    op.taux=parseFloat(newTaux);
+  }
+  updateBadges();render();
+}
+
+// -- Glisser-déposer entre lignes (réordonner à date égale / changer l'échéance visuellement) --
+function opDragStart(ev,m,svc,id){
+  dragOp={m,svc,id};
+  ev.currentTarget.classList.add('dragging');
+  ev.dataTransfer.effectAllowed='move';
+  ev.dataTransfer.setData('text/plain',id);
+}
+function opDragEnd(ev){ev.currentTarget.classList.remove('dragging');}
+function opRowDragOver(ev){ev.preventDefault();ev.currentTarget.classList.add('drag-over');}
+function opRowDragLeave(ev){ev.currentTarget.classList.remove('drag-over');}
+function ordreAvant(m,targetId){
+  // Calcule un ordre strictement compris entre le voisin précédent et la cible,
+  // pour insérer une ligne juste avant elle sans jamais entrer en collision
+  // avec l'ordre d'une autre ligne déjà présente (ce qui la ferait bouger aussi).
+  let all=[];
+  SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>all.push(op)));
+  all.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||((a.ordre||0)-(b.ordre||0)));
+  const idx=all.findIndex(o=>o.id===targetId);
+  if(idx<=0) return (all[0]?.ordre||nextOrdre())-1;
+  const prev=all[idx-1], target=all[idx];
+  return ((prev.ordre||0)+(target.ordre||0))/2;
+}
+function opRowDrop(ev,m,svc,targetId){
+  ev.preventDefault();ev.currentTarget.classList.remove('drag-over');
+  if(!dragOp)return;
+  const dragged=findOp(dragOp.m,dragOp.svc,dragOp.id);
+  const target=findOp(m,svc,targetId);
+  if(!dragged||!target||dragged.id===target.id){dragOp=null;return;}
+  const movedAcrossMonth=dragOp.m!==m;
+  dragged.date=target.date;
+  dragged.ordre=ordreAvant(m,targetId);
+  if(movedAcrossMonth){
+    data[dragOp.m][dragOp.svc]=data[dragOp.m][dragOp.svc].filter(o=>o.id!==dragged.id);
+    if(!data[m][dragOp.svc])data[m][dragOp.svc]=[];
+    data[m][dragOp.svc].push(dragged);
+  }
+  dragOp=null;updateBadges();render();
+  notify(`Échéance déplacée au ${target.date}`,"success");
+}
+
+// -- Glisser une ligne directement sur un mois de la sidebar --
+function monthDragOver(ev){ev.preventDefault();ev.currentTarget.classList.add('drag-target');}
+function monthDragLeave(ev){ev.currentTarget.classList.remove('drag-target');}
+function monthDrop(ev,targetMonth){
+  ev.preventDefault();ev.currentTarget.classList.remove('drag-target');
+  if(!dragOp)return;
+  const op=findOp(dragOp.m,dragOp.svc,dragOp.id);
+  if(!op){dragOp=null;return;}
+  if(targetMonth===dragOp.m){dragOp=null;return;}
+  const day=(op.date||'').split('-')[2]||'01';
+  op.date=`2026-${String(targetMonth).padStart(2,'0')}-${day}`;
+  op.ordre=nextOrdre();
+  data[dragOp.m][dragOp.svc]=data[dragOp.m][dragOp.svc].filter(o=>o.id!==op.id);
+  if(!data[targetMonth][dragOp.svc])data[targetMonth][dragOp.svc]=[];
+  data[targetMonth][dragOp.svc].push(op);
+  dragOp=null;updateBadges();render();
+  notify(`Déplacé vers ${MONTHS[targetMonth-1]} — ${op.libelle}`,"success");
+}
+function filterSvc(svc){currentSvc=svc;render();}
+function setType(t){formType=t;render();}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function fmt(v){return new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",minimumFractionDigits:2}).format(v||0);}
+function todayStr(){return new Date().toISOString().split("T")[0];}
+
+function exportData(){
+  const p={_tresorerie:data,_ls:lsData};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));
+  a.download="tresorerie_2026.json";a.click();
+  notify("Données sauvegardées","success");
+}
+
+
+function generateExcel(){
+  const p={_tresorerie:data,_ls:lsData,_dc:dcData,_generated:new Date().toISOString()};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));
+  a.download="tresorerie_2026_data.json";a.click();
+  notify("JSON exporté — glissez-le sur Claude pour l'Excel","success");
+  setTimeout(()=>{
+    const m=document.createElement("div");
+    m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px";
+    m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--ls);border-radius:12px;padding:28px;max-width:460px;width:100%">
+      <div style="font-size:16px;font-weight:800;margin-bottom:8px">📊 Générer l'Excel</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">
+        Le fichier <strong style="color:var(--text)">tresorerie_2026_data.json</strong> vient d'être téléchargé.<br><br>
+        Pour générer l'Excel (12 onglets + synthèse annuelle + onglet LS) :
+      </div>
+      <ol style="font-size:13px;color:var(--text);line-height:2.2;padding-left:18px;margin-bottom:16px">
+        <li>Revenez dans la conversation Claude</li>
+        <li>Glissez-déposez le fichier JSON</li>
+        <li>Tapez : <em style="color:var(--accent)">"Génère l'Excel à partir de ce JSON"</em></li>
+      </ol>
+      <button class="btn btn-primary" onclick="this.closest('div[style]').remove()" style="width:100%">Compris</button>
+    </div>`;
+    document.body.appendChild(m);
+  },300);
+}
+
+// ══════════════════════════════════════════════
+// MODULE DETTES & CHARGES FIXES
+// ══════════════════════════════════════════════
+function renderDC(){
+  const totalDette=dcData.dettes.reduce((s,d)=>s+(parseFloat(d.montantTotal||0)-parseFloat(d.montantPaye||0)),0);
+  const totalMens=dcData.charges.filter(c=>c.type==='mensuelle').reduce((s,c)=>s+parseFloat(c.montant||0),0);
+  const totalTrim=dcData.charges.filter(c=>c.type==='trimestrielle').reduce((s,c)=>s+parseFloat(c.montant||0),0);
+  const totalAnn=dcData.charges.filter(c=>c.type==='annuelle').reduce((s,c)=>s+parseFloat(c.montant||0),0);
+  const chargeAnnuelle=totalMens*12+totalTrim*4+totalAnn;
+
+  let h=`<div class="page-title">📋 Dettes &amp; Charges fixes</div>
+  <div class="page-sub">Suivi des engagements financiers récurrents et dettes en cours</div>
+  <div class="dc-banner">
+    <div class="ls-banner-item"><span class="ls-banner-label">Dettes restantes</span><span class="dc-banner-val" style="color:var(--rd)">${fmt(totalDette)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Charges mensuelles</span><span class="dc-banner-val" style="color:var(--fg)">${fmt(totalMens)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Charges trimestrielles</span><span class="dc-banner-val" style="color:var(--lm)">${fmt(totalTrim)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Charge annuelle totale</span><span class="dc-banner-val" style="color:var(--muted)">${fmt(chargeAnnuelle)}</span></div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" style="background:var(--rd);color:#fff;font-size:12px;padding:7px 14px" onclick="dcAddMode='dette';render()">+ Dette</button>
+      <button class="btn" style="background:var(--fg);color:#fff;font-size:12px;padding:7px 14px" onclick="dcAddMode='charge';render()">+ Charge</button>
+    </div>
+  </div>`;
+
+  // ── Formulaire ajout dette
+  if(dcAddMode==='dette') h+=`
+  <div class="add-card" style="border-color:var(--rd)">
+    <div class="add-card-title" style="color:var(--rd)">+ Nouvelle dette</div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1;min-width:160px"><label>Intitulé</label><input type="text" id="dc-dnom" placeholder="Ex: Prêt banque / Fournisseur X"></div>
+      <div class="form-group" style="flex:1;min-width:140px"><label>Créancier</label><input type="text" id="dc-dcred" placeholder="Organisme ou personne"></div>
+      <div class="form-group"><label>Montant total (€)</label><input type="number" id="dc-dtot" min="0" step="0.01" placeholder="0.00" style="width:140px"></div>
+      <div class="form-group"><label>Déjà remboursé (€)</label><input type="number" id="dc-dpay" min="0" step="0.01" placeholder="0.00" style="width:140px"></div>
+      <div class="form-group"><label>Mensualité (€)</label><input type="number" id="dc-dmens" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group"><label>Date début</label><input type="date" id="dc-ddate" value="${todayStr()}" style="width:145px"></div>
+      <div class="form-group" style="flex:1;min-width:160px"><label>Notes</label><input type="text" id="dc-dnotes" placeholder="Conditions, ATD…"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" style="background:var(--rd);color:#fff" onclick="addDette()">✓ Enregistrer</button>
+      <button class="btn btn-ghost" onclick="dcAddMode=null;render()">Annuler</button>
+    </div>
+  </div>`;
+
+  // ── Formulaire ajout charge
+  if(dcAddMode==='charge') h+=`
+  <div class="add-card" style="border-color:var(--fg)">
+    <div class="add-card-title" style="color:var(--fg)">+ Nouvelle charge / récurrence</div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1;min-width:160px"><label>Intitulé</label><input type="text" id="dc-cnom" placeholder="Ex: URSSAF, TVA, Humanis, Abonnement client…"></div>
+      <div class="form-group" style="flex:1;min-width:140px"><label>Organisme / Client</label><input type="text" id="dc-corg" placeholder="URSSAF, DGFiP, Humanis…"></div>
+      <div class="form-group"><label>Sens</label>
+        <div class="type-toggle">
+          <button type="button" class="type-btn ${dcChargeFlux==='E'?'active-e':''}" onclick="setDcChargeFlux('E')">↑ Entrée</button>
+          <button type="button" class="type-btn ${dcChargeFlux==='D'?'active-d':''}" onclick="setDcChargeFlux('D')">↓ Sortie</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Service</label>
+        <select id="dc-csvc" style="width:110px">${SERVICES.map(s=>`<option value="${s.code}" ${s.code==='FG'?'selected':''}>${s.code}</option>`).join('')}</select>
+      </div>
+      <div class="form-group">
+        <label>Type de périodicité</label>
+        <select id="dc-ctype" style="width:165px">
+          <option value="mensuelle">Mensuelle (chaque mois)</option>
+          <option value="trimestrielle">Trimestrielle (T1/T2/T3/T4)</option>
+          <option value="annuelle">Annuelle</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Montant par échéance (€)</label><input type="number" id="dc-cmontant" min="0" step="0.01" placeholder="0.00" style="width:155px"></div>
+      <div class="form-group" style="flex:1;min-width:160px"><label>Notes</label><input type="text" id="dc-cnotes" placeholder="Base de calcul, particularités…"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" style="background:var(--fg);color:#fff" onclick="addCharge()">✓ Enregistrer</button>
+      <button class="btn btn-ghost" onclick="dcAddMode=null;render()">Annuler</button>
+    </div>
+  </div>`;
+
+  // ── Section dettes
+  h+=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Dettes en cours</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${dcData.dettes.length} dette(s) — Restant : ${fmt(totalDette)}</span>
+    </div>`;
+  if(dcData.dettes.length===0){
+    h+=`<div class="empty-state"><div class="empty-icon" style="font-size:24px">✓</div>Aucune dette enregistrée</div>`;
+  } else {
+    h+=`<table><thead><tr>
+      <th>Intitulé</th><th>Créancier</th><th>Restant dû</th><th>Mensualité</th>
+      <th>Avancement</th><th>Notes</th><th></th>
+    </tr></thead><tbody>`;
+    dcData.dettes.forEach(d=>{
+      const tot=parseFloat(d.montantTotal||0);
+      const pay=parseFloat(d.montantPaye||0);
+      const rest=tot-pay;
+      const pct=tot>0?Math.round(pay/tot*100):0;
+      const moisRestants=d.mensualite>0?Math.ceil(rest/parseFloat(d.mensualite)):null;
+      h+=`<tr>
+        <td style="font-weight:700">${d.nom}</td>
+        <td style="color:var(--muted)">${d.credancier||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--rd)">${fmt(rest)}</td>
+        <td style="font-family:'DM Mono',monospace">${d.mensualite>0?fmt(parseFloat(d.mensualite)):'—'}</td>
+        <td style="min-width:140px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px">
+            <span>${pct}% remboursé</span>${moisRestants?`<span>~${moisRestants} mois</span>`:''}
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%;background:${pct>75?'var(--income)':pct>40?'var(--lm)':'var(--rd)'}"></div>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted);font-style:italic">${d.notes||''}</td>
+        <td>
+          <button class="btn-danger-sm" style="font-size:11px;color:var(--income);margin-right:4px" onclick="payerMensualite('${d.id}')" title="Enregistrer paiement mensualité">+€</button>
+          <button class="btn-danger-sm" onclick="delDette('${d.id}')">✕</button>
+        </td>
+      </tr>`;
+    });
+    h+=`</tbody></table>`;
+  }
+  h+=`</div>`;
+
+  // ── Section charges mensuelles
+  const mensuelles=dcData.charges.filter(c=>c.type==='mensuelle');
+  const mensuellesAffichees=chargeSearchQuery
+    ?mensuelles.filter(c=>(c.nom||'').toLowerCase().includes(chargeSearchQuery.toLowerCase())||(c.organisme||'').toLowerCase().includes(chargeSearchQuery.toLowerCase()))
+    :mensuelles;
+  h+=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Charges mensuelles <span class="dc-tag dc-tag-monthly">Chaque mois</span></span>
+      <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <input type="text" id="charge-search-input" placeholder="🔍 Rechercher un intitulé…" value="${chargeSearchQuery}" oninput="handleSearchInput('charge',this.value,'charge-search-input')"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 10px;border-radius:var(--radius);width:200px;outline:none">
+        ${chargeSearchQuery?`<button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="chargeSearchQuery='';render();">✕</button>`:''}
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${chargeSearchQuery?`${mensuellesAffichees.length} / `:''}${mensuelles.length} charge(s) — ${fmt(totalMens)} / mois</span>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px" title="Crée les lignes prévisionnelles pour les mois/trimestres restants de l'année (charges mensuelles ET trimestrielles)" onclick="genererChargesPrevisionnelles()">🔮 Générer jusqu'à décembre</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;border-color:var(--rd);color:var(--rd)" title="Recherche et supprime les lignes strictement identiques (même date, libellé, montant, type) sur tous les mois" onclick="if(confirm('Rechercher et supprimer les doublons sur tous les mois ? Cette action est irréversible.'))nettoyerDoublons()">🧹 Nettoyer les doublons</button>
+      </span>
+    </div>`;
+  if(mensuelles.length===0){
+    h+=`<div class="empty-state" style="padding:24px"><div class="empty-icon" style="font-size:20px">+</div>Aucune charge mensuelle — cliquez "+ Charge"</div>`;
+  } else if(mensuellesAffichees.length===0){
+    h+=`<div class="empty-state" style="padding:24px">🔍 Aucune charge ne correspond à "${chargeSearchQuery}"</div>`;
+  } else {
+    h+=chargesTable(mensuellesAffichees,'mensuelle');
+  }
+  h+=`</div>`;
+
+  // ── Section charges trimestrielles
+  const trim=dcData.charges.filter(c=>c.type==='trimestrielle');
+  h+=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Charges trimestrielles <span class="dc-tag dc-tag-quarterly">T1 / T2 / T3 / T4</span></span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${trim.length} charge(s) — ${fmt(totalTrim)} / trimestre</span>
+    </div>`;
+  if(trim.length===0){
+    h+=`<div class="empty-state" style="padding:24px"><div class="empty-icon" style="font-size:20px">+</div>Aucune charge trimestrielle</div>`;
+  } else {
+    h+=chargesTable(trim,'trimestrielle');
+  }
+  h+=`</div>`;
+
+  // ── Section charges annuelles
+  const ann=dcData.charges.filter(c=>c.type==='annuelle');
+  if(ann.length>0){
+    h+=`<div class="dc-section">
+      <div class="dc-section-hdr">
+        <span class="dc-section-title">Charges annuelles <span class="dc-tag dc-tag-debt">1 fois / an</span></span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${fmt(totalAnn)} / an</span>
+      </div>${chargesTable(ann,'annuelle')}</div>`;
+  }
+
+  // ── Projection mensuelle
+  h+=projectionPanel(totalMens,totalTrim,totalAnn,dcData.dettes);
+
+  document.getElementById("page-content").innerHTML=h;
+}
+
+function chargesTable(charges, type){
+  const now=new Date();
+  const moisActuel=now.getMonth()+1;
+  const trimActuel=Math.ceil(moisActuel/3);
+
+  let html=`<table><thead><tr>
+    <th></th><th>Intitulé</th><th>Organisme</th><th>Montant</th>
+    <th>Prochaine échéance</th><th>Statut ce mois/trim</th><th>Notes</th><th></th>
+  </tr></thead><tbody>`;
+
+  charges.forEach(c=>{
+    const moisKey=`2026-${String(moisActuel).padStart(2,'0')}`;
+    const hist=c.historique||[];
+    const payeCeMois=hist.find(h=>h.mois===moisKey);
+    const payeCeTrim=type==='trimestrielle'?hist.find(h=>{
+      const hm=parseInt((h.mois||'').split('-')[1]||0);
+      return Math.ceil(hm/3)===trimActuel && (h.mois||'').startsWith('2026');
+    }):null;
+    const estPaye=type==='mensuelle'?payeCeMois:(type==='trimestrielle'?payeCeTrim:hist.length>0);
+
+    const prochaineEch=type==='mensuelle'?`Mois ${moisActuel}`:
+      type==='trimestrielle'?`T${trimActuel} (mois ${trimActuel*3-2}-${trimActuel*3})`:
+      'Annuelle';
+    const flux=c.flux||'D';
+    const montantColor=flux==='E'?'var(--income)':'var(--fg)';
+
+    html+=`<tr>
+      <td title="${flux==='E'?'Recette récurrente':'Charge / dépense'}">${flux==='E'?'↑':'↓'} <span style="font-size:10px;color:var(--muted)">${c.service||'FG'}</span></td>
+      <td style="font-weight:700">${c.nom}</td>
+      <td style="color:var(--muted)">${c.organisme||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;color:${montantColor}">${fmt(parseFloat(c.montant||0))}</td>
+      <td style="font-size:12px;color:var(--muted)">${prochaineEch}</td>
+      <td>${estPaye
+        ?(payeCeMois && payeCeMois.previsionnel
+          ?`<button style="background:#1a2440;color:var(--accent);font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;border:none;cursor:pointer;font-family:'Syne',sans-serif" title="Généré automatiquement — cliquer pour confirmer que c'est bien réel" onclick="confirmerChargePrevisionnelle('${c.id}','${moisKey}')">🔮 Prévisionnel — confirmer</button>`
+          :`<span style="background:#0D2D1E;color:var(--income);font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px">✓ ${flux==='E'?'Encaissé':'Payé'}</span>`)
+        :`<button style="background:#2D2200;color:var(--lm);font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;border:none;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s"
+          onmouseover="this.style.background='var(--lm)';this.style.color='#000'"
+          onmouseout="this.style.background='#2D2200';this.style.color='var(--lm)'"
+          onclick="payerCharge('${c.id}')">Marquer ${flux==='E'?'encaissé':'payé'}</button>`
+      }</td>
+      <td style="font-size:11px;color:var(--muted);font-style:italic">${c.notes||''}</td>
+      <td><button class="btn-danger-sm" title="Supprimer définitivement de la liste récurrente" onclick="delCharge('${c.id}')">✕</button></td>
+    </tr>`;
+  });
+  html+=`</tbody></table>`;
+  return html;
+}
+
+// -- Génère les lignes prévisionnelles des charges mensuelles jusqu'à décembre --
+function genererChargesPrevisionnelles(){
+  const moisDepart=new Date().getMonth()+1;
+  const trimDepart=Math.ceil(moisDepart/3);
+  let added=0;
+  dcData.charges.forEach(c=>{
+    if(c.type!=='mensuelle' && c.type!=='trimestrielle')return;
+    let jour='05';
+    let offsetJours=0; // écart facturation → encaissement, en jours, déduit de la dernière échéance connue
+    if(c.historique && c.historique.length>0){
+      const derniere=c.historique[c.historique.length-1];
+      if(derniere.date && derniere.date.split('-')[2]) jour=derniere.date.split('-')[2];
+      if(derniere.date && derniere.dateEncaissement){
+        const d1=new Date(derniere.date+'T00:00:00'), d2=new Date(derniere.dateEncaissement+'T00:00:00');
+        const diff=Math.round((d2-d1)/86400000);
+        if(diff>0) offsetJours=diff;
+      }
+    }
+    const svc=c.service||'FG';
+    const flux=c.flux||'D';
+
+    const calcDateEnc=(dateLigne)=>{
+      if(!offsetJours || flux!=='E')return '';
+      const d=new Date(dateLigne+'T00:00:00');
+      d.setDate(d.getDate()+offsetJours);
+      return fmtISOLocal(d);
+    };
+
+    if(c.type==='mensuelle'){
+      for(let m=moisDepart;m<=12;m++){
+        const moisKey=`2026-${String(m).padStart(2,'0')}`;
+        const dejaTraite=(c.historique||[]).some(h=>h.mois===moisKey);
+        if(dejaTraite)continue;
+        if(!data[m][svc])data[m][svc]=[];
+        const libelleAttendu=`${flux==='E'?'Recette récurrente':'Charge'} — ${c.nom}${c.organisme?' ('+c.organisme+')':''} [prévisionnel]`;
+        const existeDeja=data[m][svc].some(op=>op.libelle===libelleAttendu);
+        if(existeDeja)continue; // protège contre les charges dupliquées qui généreraient deux fois la même ligne
+        const dateLigne=`2026-${String(m).padStart(2,'0')}-${jour}`;
+        const dateEncLigne=calcDateEnc(dateLigne);
+        data[m][svc].push({
+          id:'prev_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+          date:dateLigne,dateEncaissement:dateEncLigne,
+          libelle:libelleAttendu,
+          type:flux,montant:parseFloat(c.montant||0),taux:20,montantTVAManuel:0,
+          ordre:nextOrdre(),origine:'Recurrent',chantierRef:''
+        });
+        if(!c.historique)c.historique=[];
+        c.historique.push({mois:moisKey,paye:parseFloat(c.montant||0),date:dateLigne,dateEncaissement:dateEncLigne,previsionnel:true});
+        added++;
+      }
+    } else {
+      // Trimestrielle : une ligne par trimestre restant, placée sur le dernier mois du trimestre
+      for(let t=trimDepart;t<=4;t++){
+        const dejaTraite=(c.historique||[]).some(h=>{
+          const hm=parseInt((h.mois||'').split('-')[1]||0);
+          return Math.ceil(hm/3)===t && (h.mois||'').startsWith('2026');
+        });
+        if(dejaTraite)continue;
+        const m=t*3; // dernier mois du trimestre (3,6,9,12)
+        const moisKey=`2026-${String(m).padStart(2,'0')}`;
+        if(!data[m][svc])data[m][svc]=[];
+        const libelleAttendu=`${flux==='E'?'Recette récurrente':'Charge'} — ${c.nom}${c.organisme?' ('+c.organisme+')':''} — T${t} [prévisionnel]`;
+        const existeDeja=data[m][svc].some(op=>op.libelle===libelleAttendu);
+        if(existeDeja)continue;
+        const dateLigne=`2026-${String(m).padStart(2,'0')}-${jour}`;
+        const dateEncLigne=calcDateEnc(dateLigne);
+        data[m][svc].push({
+          id:'prev_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+          date:dateLigne,dateEncaissement:dateEncLigne,
+          libelle:libelleAttendu,
+          type:flux,montant:parseFloat(c.montant||0),taux:20,montantTVAManuel:0,
+          ordre:nextOrdre(),origine:'Recurrent',chantierRef:''
+        });
+        if(!c.historique)c.historique=[];
+        c.historique.push({mois:moisKey,paye:parseFloat(c.montant||0),date:dateLigne,dateEncaissement:dateEncLigne,previsionnel:true});
+        added++;
+      }
+    }
+  });
+  updateBadges();render();
+  notify(added>0?`${added} ligne(s) prévisionnelle(s) générée(s) jusqu'à décembre`:'Rien à générer — tous les mois sont déjà couverts','success');
+}
+
+// -- Confirme qu'une ligne prévisionnelle correspond bien à la réalité --
+function confirmerChargePrevisionnelle(chargeId, moisKey){
+  const c=dcData.charges.find(x=>x.id===chargeId);if(!c)return;
+  const h=(c.historique||[]).find(x=>x.mois===moisKey);
+  if(h)delete h.previsionnel;
+  updateBadges();render();
+  notify(`${c.nom} — ${moisKey} confirmé`,"success");
+}
+
+// -- Nettoyage des doublons créés par des charges dupliquées avant le correctif --
+function nettoyerDoublons(){
+  let removed=0;
+  for(let m=1;m<=12;m++){
+    SERVICES.forEach(s=>{
+      const arr=data[m][s.code]||[];
+      const vus=new Set();
+      const nettoye=[];
+      arr.forEach(op=>{
+        // Signature : même date + même libellé + même montant + même type = doublon probable
+        const sig=`${op.date}|${op.libelle}|${op.montant}|${op.type}`;
+        if(vus.has(sig)){removed++;return;} // on saute cette ligne, c'est un doublon
+        vus.add(sig);
+        nettoye.push(op);
+      });
+      data[m][s.code]=nettoye;
+    });
+  }
+  updateBadges();render();
+  if(removed>0){
+    notify(`🧹 ${removed} doublon(s) supprimé(s) — pense à cliquer ☁ Sauvegarder`,"success");
+  } else {
+    notify('Aucun doublon détecté','success');
+  }
+}
+
+// -- Répare l'ordre de tri d'un mois : réassigne un ordre strictement croissant
+// selon la date (et l'ordre d'apparition actuel à date égale), pour corriger
+// tout historique corrompu par d'anciens allers-retours Airtable ou glissés-déposés. --
+function reparerOrdreMois(m){
+  let all=[];
+  SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>all.push(op))); // référence directe, pas de copie
+  all.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||((a.ordre||0)-(b.ordre||0)));
+  all.forEach(op=>{op.ordre=nextOrdre();});
+  updateBadges();render();
+  notify(`Ordre de tri de ${MONTHS[m-1]} réparé (${all.length} ligne(s)) — pense à cliquer ☁ Sauvegarder`,"success");
+}
+
+// -- Corrige les lignes rangées dans le mauvais mois (date qui ne correspond pas au mois où la ligne est stockée) --
+function reparerCoherenceDates(){
+  let deplacees=0;
+  for(let m=1;m<=12;m++){
+    SERVICES.forEach(s=>{
+      const arr=data[m][s.code]||[];
+      const aGarder=[];
+      arr.forEach(op=>{
+        const moisReel=op.date?parseInt(op.date.split('-')[1],10):m;
+        if(moisReel && moisReel!==m && moisReel>=1 && moisReel<=12){
+          if(!data[moisReel][s.code])data[moisReel][s.code]=[];
+          data[moisReel][s.code].push(op);
+          deplacees++;
+        } else {
+          aGarder.push(op);
+        }
+      });
+      data[m][s.code]=aGarder;
+    });
+  }
+  updateBadges();render();
+  if(deplacees>0){
+    notify(`🔧 ${deplacees} ligne(s) déplacée(s) vers leur bon mois — pense à cliquer ☁ Sauvegarder`,"success");
+  } else {
+    notify('Toutes les lignes sont déjà dans le bon mois','success');
+  }
+}
+
+// -- Diagnostic : affiche le calcul du solde étape par étape, pour repérer précisément où un écart apparaît --
+function renderDiagnostic(m){
+  const depart=soldeDebutMois(m);
+  let running=depart;
+  const all=[];
+  SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>all.push({...op,service:s.code,ordre:op.ordre||0})));
+  all.sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.ordre-b.ordre));
+  let h=`<div class="page-title">🔍 Diagnostic — ${MONTHS[m-1]}</div>
+  <div class="page-sub">Calcul détaillé, ligne par ligne, dans l'ordre exact utilisé pour le solde.</div>
+  <div class="table-wrap"><table><thead><tr>
+    <th>#</th><th>Ordre (brut)</th><th>Date</th><th>Service</th><th>Libellé</th><th>Type</th>
+    <th style="text-align:right">Montant</th><th style="text-align:right">Solde avant</th><th style="text-align:right">Solde après</th>
+  </tr></thead><tbody>
+  <tr style="background:var(--surface3);font-weight:700">
+    <td colspan="7">Solde de départ (soldeDebutMois(${m}))</td><td></td>
+    <td style="text-align:right">${fmt(depart)}</td>
+  </tr>
+  ${all.map((o,i)=>{
+    const avant=running;
+    running += (o.type==='E'?o.montant:-o.montant);
+    return `<tr>
+      <td>${i+1}</td><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${o.ordre}</td>
+      <td class="td-date">${o.date}</td><td>${o.service}</td><td>${(o.libelle||'').slice(0,40)}</td>
+      <td>${o.type}</td>
+      <td style="text-align:right">${o.type==='E'?'+':'−'} ${fmt(o.montant)}</td>
+      <td style="text-align:right;color:var(--muted)">${fmt(avant)}</td>
+      <td style="text-align:right;font-weight:700">${fmt(running)}</td>
+    </tr>`;
+  }).join('')}
+  </tbody></table></div>`;
+  document.getElementById("page-content").innerHTML=h;
+}
+
+function projectionPanel(mensuel, trimestriel, annuel, dettes){
+  const mensualitesDettes=dettes.reduce((s,d)=>s+parseFloat(d.mensualite||0),0);
+  const chargesMois=mensuel+Math.round(trimestriel/3*100)/100+Math.round(annuel/12*100)/100;
+  const totalMois=chargesMois+mensualitesDettes;
+  const MOIS_FR=["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+  const now=new Date().getMonth();
+
+  const bars=MOIS_FR.map((mn,i)=>{
+    const trimCharge=(i+1)%3===0?trimestriel:0; // simplification : fin de trimestre
+    const annCharge=i===11?annuel:0;
+    const total=mensuel+trimCharge+annCharge+mensualitesDettes;
+    return{mn,total,isCurrentOrFuture:i>=now};
+  });
+  const maxVal=Math.max(...bars.map(b=>b.total),1);
+
+  let html=`<div class="dc-section">
+    <div class="dc-section-hdr">
+      <span class="dc-section-title">Projection mensuelle des charges</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">Charge moy. : ${fmt(totalMois)} / mois</span>
+    </div>
+    <div style="padding:16px">
+      <div style="display:flex;align-items:flex-end;gap:6px;height:100px">`;
+  bars.forEach(b=>{
+    const h=Math.max(4,Math.round(b.total/maxVal*88));
+    html+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="width:100%;height:${h}px;background:${b.isCurrentOrFuture?'var(--rd)':'var(--surface3)'};border-radius:3px 3px 0 0;opacity:${b.isCurrentOrFuture?'1':'0.5'}"></div>
+      <span style="font-size:9px;color:var(--muted)">${b.mn}</span>
+    </div>`;
+  });
+  html+=`</div>
+      <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;font-size:12px">
+        <span style="color:var(--muted)">Charges fixes : <strong style="color:var(--fg)">${fmt(chargesMois)}</strong></span>
+        <span style="color:var(--muted)">Mensualités dettes : <strong style="color:var(--rd)">${fmt(mensualitesDettes)}</strong></span>
+        <span style="color:var(--muted)">Total mensuel moyen : <strong style="color:var(--text)">${fmt(totalMois)}</strong></span>
+      </div>
+    </div>
+  </div>`;
+  return html;
+}
+
+function addDette(){
+  const nom=document.getElementById("dc-dnom").value.trim();
+  const cred=document.getElementById("dc-dcred").value.trim();
+  const tot=parseFloat(document.getElementById("dc-dtot").value)||0;
+  const pay=parseFloat(document.getElementById("dc-dpay").value)||0;
+  const mens=parseFloat(document.getElementById("dc-dmens").value)||0;
+  const date=document.getElementById("dc-ddate").value;
+  const notes=document.getElementById("dc-dnotes").value.trim();
+  if(!nom){notify("Intitulé requis","error");return;}
+  if(tot<=0){notify("Montant total requis","error");return;}
+  dcData.dettes.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),nom,credancier:cred,montantTotal:tot,montantPaye:pay,mensualite:mens,dateDebut:date,notes});
+  dcAddMode=null;updateBadges();render();
+  notify(`Dette "${nom}" enregistrée`,"success");
+}
+
+let dcChargeFlux='D';
+function setDcChargeFlux(f){dcChargeFlux=f;render();}
+function addCharge(){
+  const nom=document.getElementById("dc-cnom").value.trim();
+  const org=document.getElementById("dc-corg").value.trim();
+  const type=document.getElementById("dc-ctype").value;
+  const svc=document.getElementById("dc-csvc").value;
+  const montant=parseFloat(document.getElementById("dc-cmontant").value)||0;
+  const notes=document.getElementById("dc-cnotes").value.trim();
+  if(!nom){notify("Intitulé requis","error");return;}
+  if(montant<=0){notify("Montant requis","error");return;}
+  dcData.charges.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),nom,organisme:org,type,montant,notes,flux:dcChargeFlux,service:svc,historique:[]});
+  dcAddMode=null;updateBadges();render();
+  notify(`${dcChargeFlux==='E'?'Recette récurrente':'Charge'} "${nom}" enregistrée`,"success");
+}
+
+function payerMensualite(id){
+  const d=dcData.dettes.find(x=>x.id===id);if(!d)return;
+  const mens=parseFloat(d.mensualite||0);
+  if(mens<=0){notify("Pas de mensualité définie","error");return;}
+  d.montantPaye=parseFloat(d.montantPaye||0)+mens;
+  // Injecter dans opérations du mois courant
+  const m=new Date().getMonth()+1;
+  if(!data[m]['RD'])data[m]['RD']=[];
+  data[m]['RD'].push({id:Date.now().toString(36),date:todayStr(),libelle:`Remb. dette — ${d.nom} (${d.credancier||''})`,type:'D',montant:mens});
+  updateBadges();render();
+  notify(`Mensualité ${fmt(mens)} enregistrée pour ${d.nom}`,"success");
+}
+
+function payerCharge(id){
+  const c=dcData.charges.find(x=>x.id===id);if(!c)return;
+  const moisKey=`2026-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+  if(!c.historique)c.historique=[];
+  c.historique.push({mois:moisKey,paye:parseFloat(c.montant||0),date:todayStr()});
+  const flux=c.flux||'D';
+  const svc=c.service||'FG';
+  // Injecter dans opérations
+  const m=new Date().getMonth()+1;
+  if(!data[m][svc])data[m][svc]=[];
+  data[m][svc].push({id:Date.now().toString(36),date:todayStr(),
+    libelle:`${flux==='E'?'Recette récurrente':'Charge'} — ${c.nom} (${c.organisme||''})`,
+    type:flux,montant:parseFloat(c.montant||0),taux:20,ordre:nextOrdre(),origine:'Recurrent',chantierRef:''});
+  updateBadges();render();
+  notify(`${c.nom} — ${fmt(parseFloat(c.montant||0))} enregistré`,"success");
+}
+
+function delDette(id){
+  if(!confirm("Supprimer cette dette ?"))return;
+  dcData.dettes=dcData.dettes.filter(d=>d.id!==id);updateBadges();render();
+  notify("Dette supprimée","success");
+}
+
+function delCharge(id){
+  if(!confirm("Supprimer cette charge ?"))return;
+  dcData.charges=dcData.charges.filter(c=>c.id!==id);updateBadges();render();
+  notify("Charge supprimée","success");
+}
+
+// ══════════════════════════════════════════════
+// MISE À JOUR HISTORIQUE (totaux par mois/service avant démarrage du suivi détaillé)
+// ══════════════════════════════════════════════
+function findHistOp(m,svc,type){
+  // Recherche par contenu (mois/service/origine/type), pas par id — l'id d'une ligne
+  // change quand elle est rechargée depuis Airtable (remplacé par l'id Airtable),
+  // donc chercher par id exact ne fonctionne plus après une sauvegarde+rechargement.
+  return (data[m][svc]||[]).find(o=>o.origine==='Historique' && o.type===type);
+}
+function renderHistorique(){
+  let h=`<div class="page-title">🕐 Mise à jour historique</div>
+  <div class="page-sub">Renseigne les totaux déjà connus par mois et par service (avant le démarrage du suivi détaillé). Laisse vide ce qui ne s'applique pas — un total 0 ou vide supprime la ligne correspondante.</div>
+  <div class="table-wrap" style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr><th rowspan="2" style="vertical-align:bottom">Mois</th>${SERVICES.map(s=>`<th colspan="2" style="text-align:center;color:${s.color}">${s.code}</th>`).join('')}</tr>
+      <tr>${SERVICES.map(()=>`<th style="text-align:center;font-size:9px">Entrées</th><th style="text-align:center;font-size:9px">Sorties</th>`).join('')}</tr>
+    </thead>
+    <tbody>
+    ${MONTHS.map((mn,i)=>{
+      const m=i+1;
+      return `<tr>
+        <td style="font-weight:700;white-space:nowrap">${mn}</td>
+        ${SERVICES.map(s=>{
+          const opE=findHistOp(m,s.code,'E');
+          const opD=findHistOp(m,s.code,'D');
+          return `<td><input type="number" min="0" step="0.01" class="hist-input" data-m="${m}" data-svc="${s.code}" data-type="E" value="${opE?opE.montant:''}" placeholder="0.00" style="width:85px"></td>
+          <td><input type="number" min="0" step="0.01" class="hist-input" data-m="${m}" data-svc="${s.code}" data-type="D" value="${opD?opD.montant:''}" placeholder="0.00" style="width:85px"></td>`;
+        }).join('')}
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>
+  </div>
+  <div style="margin-top:16px"><button class="btn btn-primary" onclick="saveHistorique()">✓ Enregistrer l'historique</button></div>`;
+  document.getElementById("page-content").innerHTML=h;
+}
+
+async function saveHistorique(){
+  let count=0;
+  document.querySelectorAll('.hist-input').forEach(inp=>{
+    const m=parseInt(inp.dataset.m,10), svc=inp.dataset.svc, type=inp.dataset.type;
+    const val=parseFloat(inp.value);
+    if(!data[m][svc])data[m][svc]=[];
+    const idx=data[m][svc].findIndex(o=>o.origine==='Historique' && o.type===type);
+    if(val>0){
+      if(idx>=0){
+        // Mise à jour de la ligne existante — on garde son id (qu'il soit local ou Airtable)
+        data[m][svc][idx].montant=val;
+        data[m][svc][idx].date=data[m][svc][idx].date||`2026-${String(m).padStart(2,'0')}-01`;
+        data[m][svc][idx].libelle=`Historique ${type==='E'?'entrées':'sorties'} — ${svc}`;
+      } else {
+        data[m][svc].push({
+          id:'hist_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+          date:`2026-${String(m).padStart(2,'0')}-01`,
+          libelle:`Historique ${type==='E'?'entrées':'sorties'} — ${svc}`,
+          type,montant:val,ordre:0,origine:'Historique',chantierRef:''
+        });
+      }
+      count++;
+    } else if(idx>=0){
+      data[m][svc].splice(idx,1);
+    }
+  });
+  updateBadges();render();
+  if(airtableState.token && airtableState.base){
+    notify(`Historique enregistré (${count} ligne(s)) — sauvegarde Airtable en cours...`,"success");
+    await airtableSaveAll();
+  } else {
+    notify(`Historique enregistré localement (${count} ligne(s)) — ⚠️ configure Airtable pour ne pas le perdre au rechargement`,"error");
+  }
+}
+
+// ══════════════════════════════════════════════
+// COMPTE COURANT CAROLE — vue consolidée (les lignes vivent normalement dans
+// data[mois]['CC'], donc comptent dans le solde de trésorerie comme toute
+// opération ; seule la TVA les ignore — voir renderMonth)
+// ══════════════════════════════════════════════
+function ccReservoirSolde(){
+  let solde=0;
+  for(let m=1;m<=12;m++){
+    (data[m] && data[m]['CC']||[]).forEach(op=>{
+      solde += op.type==='D' ? op.montant : -op.montant; // D = retrait vers CC (réservoir monte), E = réinjection (réservoir descend)
+    });
+  }
+  return solde;
+}
+function renderCC(){
+  let all=[];
+  for(let m=1;m<=12;m++)(data[m] && data[m]['CC']||[]).forEach(op=>all.push({...op,mois:m}));
+  all.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const reservoir=ccReservoirSolde();
+  const totalRetraits=all.filter(o=>o.type==='D').reduce((s,o)=>s+o.montant,0);
+  const totalReinjections=all.filter(o=>o.type==='E').reduce((s,o)=>s+o.montant,0);
+
+  let h=`<div class="page-title">🏦 Compte Courant Carole</div>
+  <div class="page-sub">Ces mouvements vivent normalement dans la trésorerie de chaque mois et comptent dans le solde — seule la TVA les ignore. Cette page en donne juste une vue consolidée sur l'année.</div>
+
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Réservoir actuel (cumul année)</div><div class="stat-value ${reservoir>=0?'positive':'negative'}">${fmt(reservoir)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total retiré (cumul)</div><div class="stat-value negative">${fmt(totalRetraits)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total réinjecté (cumul)</div><div class="stat-value positive">${fmt(totalReinjections)}</div></div>
+  </div>
+
+  <div class="add-card" style="border-color:var(--cc)">
+    <div class="add-card-title" style="color:var(--cc)">+ Nouveau mouvement</div>
+    <div class="form-row">
+      <div class="form-group"><label>Sens</label>
+        <div class="type-toggle">
+          <button type="button" class="type-btn ${ccType==='D'?'active-d':''}" onclick="setCcType('D')">↓ Retrait (vers CC — augmente le réservoir)</button>
+          <button type="button" class="type-btn ${ccType==='E'?'active-e':''}" onclick="setCcType('E')">↑ Réinjection (vers compte principal — réduit le réservoir)</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Date</label><input type="date" id="cc-date" value="${todayStr()}" style="width:150px"></div>
+      <div class="form-group"><label>Montant (€)</label><input type="number" id="cc-amt" min="0" step="0.01" placeholder="0.00" style="width:130px"></div>
+      <div class="form-group" style="flex:1;min-width:200px"><label>Libellé</label><input type="text" id="cc-lib" placeholder="Ex : Solde initial, anticipation ATD T3…" style="width:100%"></div>
+      <div class="form-group"><label>&nbsp;</label><button class="btn" style="background:var(--cc);color:#000" onclick="addCcMouvementQuick()">Ajouter</button></div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header-bar"><span class="table-title">Historique des mouvements</span><span class="ops-count">${all.length} mouvement(s)</span></div>
+    ${all.length===0?`<div class="empty-state"><div class="empty-icon">🏦</div>Aucun mouvement enregistré</div>`
+    :`<table><thead><tr><th>Date</th><th>Mois</th><th>Sens</th><th>Libellé</th><th style="text-align:right">Montant</th><th></th></tr></thead>
+    <tbody>${all.map(o=>`<tr>
+      <td class="td-date">${o.date||'—'}</td>
+      <td>${MONTHS[o.mois-1]}</td>
+      <td><span class="type-badge ${o.type.toLowerCase()}">${o.type==='D'?'↓ Retrait':'↑ Réinjection'}</span></td>
+      <td>${o.libelle||'—'}</td>
+      <td class="td-amount ${o.type.toLowerCase()}">${o.type==='D'?'−':'+'} ${fmt(o.montant)}</td>
+      <td><button class="btn-danger-sm" onclick="delOp(${o.mois},'CC','${o.id}')">✕</button></td>
+    </tr>`).join('')}</tbody></table>`}
+  </div>`;
+  document.getElementById("page-content").innerHTML=h;
+}
+let ccType='D';
+function setCcType(t){ccType=t;render();}
+function addCcMouvementQuick(){
+  const date=document.getElementById('cc-date').value;
+  const amt=parseFloat(document.getElementById('cc-amt').value);
+  const lib=document.getElementById('cc-lib').value.trim()||(ccType==='D'?'Retrait vers Compte Courant':'Réinjection depuis Compte Courant');
+  if(!date){notify('Date requise','error');return;}
+  if(!amt||amt<=0){notify('Montant invalide','error');return;}
+  const m=parseInt(date.split('-')[1],10);
+  if(!data[m])data[m]={};
+  if(!data[m]['CC'])data[m]['CC']=[];
+  data[m]['CC'].push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),date,libelle:lib,type:ccType,montant:amt,taux:0,ordre:nextOrdre(),origine:'Manuel',chantierRef:''});
+  document.getElementById('cc-lib').value='';document.getElementById('cc-amt').value='';
+  updateBadges();render();
+  notify(`${ccType==='D'?'Retrait':'Réinjection'} de ${fmt(amt)} enregistré — réservoir : ${fmt(ccReservoirSolde())}`,"success");
+}
+
+// ══════════════════════════════════════════════
+// MARGE & RÉSULTAT
+// ══════════════════════════════════════════════
+let margeMonth = (new Date().getFullYear()===2026) ? (new Date().getMonth()+1) : 1;
+let margeViewMode = 'mois'; // 'mois' | 'annuel'
+let margeCache = {chantiers:null, avoirs:null, loading:false};
+
+async function loadMargeData(){
+  if(!airtableState.token||!airtableState.base){notify('Configure Airtable d\'abord (⚙ Airtable)','error');return;}
+  margeCache.loading=true;render();
+  try{
+    margeCache.chantiers = await atGetAll(AT_TABLES.chantiers);
+    margeCache.avoirs = await atGetAll(AT_TABLES.avoirs);
+    notify('Données chantiers/avoirs actualisées','success');
+  }catch(e){
+    notify('Erreur chargement : '+e.message,'error');
+  }
+  margeCache.loading=false;render();
+}
+
+function svcOfChantier(f){
+  return (f.Region||'').toUpperCase().includes('LMPM') ? 'LMPM' : 'PRGO';
+}
+
+function computeMargeMonth(m, chantiers, avoirs){
+  const hasChantierFacture=(chantiers||[]).some(r=>{
+    const f=r.fields;
+    if(!f.DateFacture||!f.MontantFacture)return false;
+    return parseInt((f.DateFacture+'').split('-')[1],10)===m;
+  });
+
+  if(!hasChantierFacture){
+    // Pas encore de facturation Chantiers saisie pour ce mois : on utilise le net Entrées-Sorties
+    // de Trésorerie (y compris les lignes Historique — Entrées = factures émises) comme proxy de marge.
+    const sumType=(arr,t)=>(arr||[]).filter(o=>o.type===t).reduce((s,o)=>s+o.montant,0);
+    const svcMarge=(code)=>{
+      const ops=data[m][code]||[];
+      const fact=sumType(ops,'E'), cout=sumType(ops,'D');
+      return {fact,cout,marge:fact-cout};
+    };
+    const PRGO=svcMarge('PRGO'), LMPM=svcMarge('LMPM'), LS=svcMarge('LS'), LM=svcMarge('LM'), VM=svcMarge('VM');
+    const margeTotal=PRGO.marge+LMPM.marge+LS.marge+LM.marge+VM.marge;
+    const ca=PRGO.fact+LMPM.fact+LS.fact+LM.fact+VM.fact;
+    return {margePRGO:PRGO.marge,margeLMPM:LMPM.marge,margeTotal,ca,
+      detail:{PRGO:{fact:PRGO.fact,cout:PRGO.cout,avoir:0},LMPM:{fact:LMPM.fact,cout:LMPM.cout,avoir:0}},
+      extras:{LS:LS.marge,LM:LM.marge,VM:VM.marge},
+      source:'historique'};
+  }
+
+  const res={PRGO:{fact:0,cout:0,avoir:0},LMPM:{fact:0,cout:0,avoir:0}};
+  (chantiers||[]).forEach(r=>{
+    const f=r.fields;
+    if(!f.DateFacture||!f.MontantFacture)return;
+    const mm=parseInt((f.DateFacture+'').split('-')[1],10);
+    if(mm!==m)return;
+    const svc=svcOfChantier(f);
+    res[svc].fact+=parseFloat(f.MontantFacture||0);
+    res[svc].cout+=parseFloat(f.CoutMateriel||0)+parseFloat(f.CoutMainOeuvre||0);
+  });
+  (avoirs||[]).forEach(r=>{
+    const f=r.fields;
+    if(!f.Date)return;
+    const mm=parseInt((f.Date+'').split('-')[1],10);
+    if(mm!==m)return;
+    if(res[f.Service]) res[f.Service].avoir+=parseFloat(f.Montant||0);
+  });
+  const margePRGO=res.PRGO.fact-res.PRGO.cout-res.PRGO.avoir;
+  const margeLMPM=res.LMPM.fact-res.LMPM.cout-res.LMPM.avoir;
+  const caPRGO=res.PRGO.fact-res.PRGO.avoir;
+  const caLMPM=res.LMPM.fact-res.LMPM.avoir;
+  return {margePRGO,margeLMPM,margeTotal:margePRGO+margeLMPM,ca:caPRGO+caLMPM,detail:res,extras:null,source:'chantiers'};
+}
+
+function netFlow(m,svc){
+  let e=0,d=0;
+  (data[m][svc]||[]).forEach(o=>{if(o.type==='E')e+=o.montant;else d+=o.montant;});
+  return {e,d,net:d-e};
+}
+
+function renderMarge(){
+  const m=margeMonth;
+  let h=`<div class="page-title">📊 Marge &amp; Résultat</div>
+  <div class="page-sub">Marge brute calculée sur la date de facturation (PRGO/LMPM). Frais généraux et remboursement de dettes suivis séparément.</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <div class="type-toggle">
+      <button class="type-btn ${margeViewMode==='mois'?'active-e':''}" onclick="margeViewMode='mois';render()">📅 Vue mensuelle</button>
+      <button class="type-btn ${margeViewMode==='annuel'?'active-e':''}" onclick="margeViewMode='annuel';render()">📆 Vue annuelle</button>
+    </div>
+    ${margeViewMode==='mois'?`
+    <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px">Mois analysé :</span>
+    <select onchange="margeMonth=parseInt(this.value,10);render()"
+      style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:6px 10px;border-radius:var(--radius);outline:none">
+      ${MONTHS.map((mn,i)=>`<option value="${i+1}" ${i+1===m?'selected':''}>${mn} 2026</option>`).join('')}
+    </select>`:''}
+    <button class="btn btn-ghost" onclick="loadMargeData()">${margeCache.loading?'<span class="sync-spinner"></span> Chargement...':'🔄 Actualiser depuis Airtable'}</button>
+  </div>`;
+
+  if(!margeCache.chantiers){
+    h+=`<div class="empty-state"><div class="empty-icon">📊</div>Clique "🔄 Actualiser depuis Airtable" pour charger les chantiers et avoirs.</div>`;
+    document.getElementById("page-content").innerHTML=h;
+    return;
+  }
+
+  h += (margeViewMode==='annuel') ? renderMargeAnnuelBody() : renderMargeMoisBody(m);
+  document.getElementById("page-content").innerHTML=h;
+}
+
+function renderMargeMoisBody(m){
+  const mg=computeMargeMonth(m, margeCache.chantiers, margeCache.avoirs);
+  const fg=netFlow(m,'FG').net;
+  const rd=netFlow(m,'RD').net;
+  const resultatOp=mg.margeTotal-fg;
+  const capaciteRemb=resultatOp-rd;
+
+  let margeSum=0,caSum=0;
+  for(let k=0;k<3;k++){
+    const mm=m-k;if(mm<1)continue;
+    const mgk=computeMargeMonth(mm, margeCache.chantiers, margeCache.avoirs);
+    margeSum+=mgk.margeTotal;caSum+=mgk.ca;
+  }
+  const tauxMoyen=caSum>0?(margeSum/caSum):null;
+  const caNecessaire=(tauxMoyen&&tauxMoyen>0)?((fg+rd)/tauxMoyen):null;
+
+  return `<div class="section-title">Performance opérationnelle — ${MONTHS[m-1]}
+    <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;margin-left:8px;vertical-align:middle;background:${mg.source==='historique'?'#2D2200':'#0D2D1E'};color:${mg.source==='historique'?'var(--lm)':'var(--income)'}">${mg.source==='historique'?'📋 Source : Historique Trésorerie':'🏗 Source : Chantiers'}</span>
+  </div>
+  <div class="totals-grid">
+    <div class="svc-total-card" style="border-color:var(--prgo)">
+      <div class="svc-total-name" style="color:var(--prgo)">PRGO</div>
+      <div class="svc-total-row"><span>Facturation</span><span>${fmt(mg.detail.PRGO.fact)}</span></div>
+      <div class="svc-total-row"><span>Coûts directs</span><span>${fmt(mg.detail.PRGO.cout)}</span></div>
+      <div class="svc-total-row"><span>Avoirs</span><span>${fmt(mg.detail.PRGO.avoir)}</span></div>
+      <div class="svc-total-net"><span>Marge brute</span><span style="color:${mg.margePRGO>=0?'var(--income)':'var(--expense)'}">${fmt(mg.margePRGO)}</span></div>
+    </div>
+    <div class="svc-total-card" style="border-color:var(--lmpm)">
+      <div class="svc-total-name" style="color:var(--lmpm)">LMPM</div>
+      <div class="svc-total-row"><span>Facturation</span><span>${fmt(mg.detail.LMPM.fact)}</span></div>
+      <div class="svc-total-row"><span>Coûts directs</span><span>${fmt(mg.detail.LMPM.cout)}</span></div>
+      <div class="svc-total-row"><span>Avoirs</span><span>${fmt(mg.detail.LMPM.avoir)}</span></div>
+      <div class="svc-total-net"><span>Marge brute</span><span style="color:${mg.margeLMPM>=0?'var(--income)':'var(--expense)'}">${fmt(mg.margeLMPM)}</span></div>
+    </div>
+    ${mg.extras?['LS','LM','VM'].map(code=>{const s=SERVICES.find(x=>x.code===code);const val=mg.extras[code];return`
+    <div class="svc-total-card" style="border-color:${s.color}">
+      <div class="svc-total-name" style="color:${s.color}">${code}</div>
+      <div class="svc-total-row"><span>Entrées</span><span style="color:var(--income)">${fmt((data[m][code]||[]).filter(o=>o.type==='E').reduce((a,o)=>a+o.montant,0))}</span></div>
+      <div class="svc-total-row"><span>Sorties</span><span style="color:var(--expense)">${fmt((data[m][code]||[]).filter(o=>o.type==='D').reduce((a,o)=>a+o.montant,0))}</span></div>
+      <div class="svc-total-net"><span>Marge (net)</span><span style="color:${val>=0?'var(--income)':'var(--expense)'}">${fmt(val)}</span></div>
+    </div>`;}).join(''):''}
+  </div>
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Marge brute totale</div><div class="stat-value ${mg.margeTotal>=0?'positive':'negative'}">${fmt(mg.margeTotal)}</div></div>
+    <div class="stat-card"><div class="stat-label">Frais généraux (FG)</div><div class="stat-value negative">${fmt(fg)}</div></div>
+    <div class="stat-card"><div class="stat-label">Résultat opérationnel</div><div class="stat-value ${resultatOp>=0?'positive':'negative'}">${fmt(resultatOp)}</div></div>
+  </div>
+
+  <div class="section-title">Servitude — dettes antérieures</div>
+  <div class="dc-banner" style="background:linear-gradient(135deg,#241535,#0D2040);border-color:var(--lmpm)">
+    <div class="ls-banner-item"><span class="ls-banner-label">Remboursement dettes (RD)</span><span class="dc-banner-val" style="color:var(--lmpm)">${fmt(rd)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Capacité de remboursement</span><span class="dc-banner-val" style="color:${capaciteRemb>=0?'var(--income)':'var(--rd)'}">${fmt(capaciteRemb)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Taux de marge moyen (3 mois)</span><span class="dc-banner-val" style="color:var(--muted)">${tauxMoyen!==null?(tauxMoyen*100).toFixed(1)+' %':'—'}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">CA nécessaire (FG + RD couverts)</span><span class="dc-banner-val" style="color:var(--accent)">${caNecessaire!==null?fmt(caNecessaire):'Indéterminé (pas assez de données)'}</span></div>
+  </div>
+  <div style="font-size:11px;color:var(--muted);line-height:1.6">
+    💡 Le "CA nécessaire" est le chiffre d'affaires facturé qu'il faudrait réaliser, compte tenu de ton taux de marge moyen des 3 derniers mois, pour couvrir à la fois tes frais généraux et le remboursement de dette de ce mois.
+    ${capaciteRemb<0?'<br>⚠️ Ce mois, l\'activité ne couvre pas le remboursement de dette prévu — le déficit est à combler par la trésorerie disponible.':''}
+  </div>`;
+}
+
+function renderMargeAnnuelBody(){
+  const rows=[];
+  let totMargePRGO=0,totMargeLMPM=0,totFG=0,totRD=0,totCA=0;
+  for(let m=1;m<=12;m++){
+    const mg=computeMargeMonth(m, margeCache.chantiers, margeCache.avoirs);
+    const fg=netFlow(m,'FG').net;
+    const rd=netFlow(m,'RD').net;
+    const resultatOp=mg.margeTotal-fg;
+    const capaciteRemb=resultatOp-rd;
+    totMargePRGO+=mg.margePRGO;totMargeLMPM+=mg.margeLMPM;totFG+=fg;totRD+=rd;totCA+=mg.ca;
+    rows.push({m,mg,fg,rd,resultatOp,capaciteRemb});
+  }
+  const margeTotaleAn=totMargePRGO+totMargeLMPM;
+  const resultatOpAn=margeTotaleAn-totFG;
+  const capaciteRembAn=resultatOpAn-totRD;
+  const tauxAnnuel=totCA>0?(margeTotaleAn/totCA):null;
+  const caNecessaireAn=(tauxAnnuel&&tauxAnnuel>0)?((totFG+totRD)/tauxAnnuel):null;
+
+  return `<div class="section-title">Synthèse annuelle 2026</div>
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Marge brute annuelle</div><div class="stat-value ${margeTotaleAn>=0?'positive':'negative'}">${fmt(margeTotaleAn)}</div></div>
+    <div class="stat-card"><div class="stat-label">Frais généraux annuels</div><div class="stat-value negative">${fmt(totFG)}</div></div>
+    <div class="stat-card"><div class="stat-label">Résultat opérationnel annuel</div><div class="stat-value ${resultatOpAn>=0?'positive':'negative'}">${fmt(resultatOpAn)}</div></div>
+  </div>
+  <div class="dc-banner" style="background:linear-gradient(135deg,#241535,#0D2040);border-color:var(--lmpm)">
+    <div class="ls-banner-item"><span class="ls-banner-label">Remboursement dettes (année)</span><span class="dc-banner-val" style="color:var(--lmpm)">${fmt(totRD)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Capacité de remboursement annuelle</span><span class="dc-banner-val" style="color:${capaciteRembAn>=0?'var(--income)':'var(--rd)'}">${fmt(capaciteRembAn)}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">Taux de marge annuel</span><span class="dc-banner-val" style="color:var(--muted)">${tauxAnnuel!==null?(tauxAnnuel*100).toFixed(1)+' %':'—'}</span></div>
+    <div class="ls-banner-item"><span class="ls-banner-label">CA nécessaire (année)</span><span class="dc-banner-val" style="color:var(--accent)">${caNecessaireAn!==null?fmt(caNecessaireAn):'Indéterminé'}</span></div>
+  </div>
+
+  <div class="section-title">Par mois</div>
+  <div class="table-wrap"><table><thead><tr>
+    <th>Mois</th>
+    <th style="text-align:right;color:var(--prgo)">Marge PRGO</th>
+    <th style="text-align:right;color:var(--lmpm)">Marge LMPM</th>
+    <th style="text-align:right">Marge totale</th>
+    <th style="text-align:right;color:var(--fg)">FG</th>
+    <th style="text-align:right">Résultat op.</th>
+    <th style="text-align:right;color:var(--lmpm)">RD</th>
+    <th style="text-align:right">Capacité remb.</th>
+  </tr></thead>
+  <tbody>${rows.map(r=>`<tr>
+    <td style="font-weight:700">${MONTHS[r.m-1]} <span title="${r.mg.source==='historique'?'Source : Historique Trésorerie':'Source : Chantiers'}" style="font-size:10px">${r.mg.source==='historique'?'📋':'🏗'}</span></td>
+    <td class="td-amount ${r.mg.margePRGO>=0?'e':'d'}">${fmt(r.mg.margePRGO)}</td>
+    <td class="td-amount ${r.mg.margeLMPM>=0?'e':'d'}">${fmt(r.mg.margeLMPM)}</td>
+    <td class="td-amount ${r.mg.margeTotal>=0?'e':'d'}">${fmt(r.mg.margeTotal)}</td>
+    <td class="td-amount d">${fmt(r.fg)}</td>
+    <td class="td-amount ${r.resultatOp>=0?'e':'d'}">${fmt(r.resultatOp)}</td>
+    <td class="td-amount d">${fmt(r.rd)}</td>
+    <td class="td-amount ${r.capaciteRemb>=0?'e':'d'}">${fmt(r.capaciteRemb)}</td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+
+
+
+
+
+function notify(msg,type="success"){
+  const n=document.getElementById("notif");
+  n.textContent=(type==="success"?"✓ ":"✕ ")+msg;
+  n.className=`notif ${type} show`;
+  setTimeout(()=>n.classList.remove("show"),3000);
+}
+
+// ══════════════════════════════════════════════
+// AIRTABLE INTEGRATION
+// ══════════════════════════════════════════════
+const AT_TABLES = {
+  mouvements: 'Tresorerie_Mouvements',
+  locataires: 'Tresorerie_Locataires',
+  factures:   'Tresorerie_Factures',
+  dettes:     'Tresorerie_Dettes',
+  charges:    'Tresorerie_Charges',
+  chantiers:  'Chantiers',
+  avoirs:     'Tresorerie_Avoirs',
+  collaborateurs: 'Tresorerie_Collaborateurs'
+};
+
+let airtableState = {
+  token: localStorage.getItem('treso_at_token') || '',
+  base:  localStorage.getItem('treso_at_base')  || '',
+  syncing: false
+};
+
+function atSetStatus(dot, msg, lastSync){
+  const d=document.getElementById('at-dot');
+  const s=document.getElementById('at-status');
+  const l=document.getElementById('at-last-sync');
+  if(d){d.className='drive-dot '+dot;}
+  if(s) s.textContent=msg;
+  if(l && lastSync) l.textContent='Dernière sync : '+lastSync;
+}
+
+function showAirtableConfigPanel(){
+  const existing = document.getElementById('at-config-panel');
+  if(existing){existing.remove();return;}
+  const panel = document.createElement('div');
+  panel.id='at-config-panel';
+  panel.className='drive-config';
+  panel.style.cssText='position:fixed;top:70px;right:24px;z-index:150;width:420px;box-shadow:0 8px 32px rgba(0,0,0,.4)';
+  panel.innerHTML=`
+    <div class="drive-config-title">⚙ Configuration Airtable</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Token (Personal Access Token)</label>
+      <input type="text" id="at-token-input" placeholder="patXXXXXXXXXXXXXX"
+        value="${airtableState.token}" style="width:100%;font-size:12px">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Base ID</label>
+      <input type="text" id="at-base-input" placeholder="appXXXXXXXXXXXXXX"
+        value="${airtableState.base}" style="width:100%;font-size:12px">
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+      Utilise la même Base ID que <strong style="color:var(--accent)">crmcommerciaux</strong> — c'est elle qui contient déjà la table <strong style="color:var(--accent)">Chantiers</strong>.
+      Le token doit avoir accès aux tables : ${Object.values(AT_TABLES).join(', ')}.
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ls" onclick="saveAirtableConfig()" style="font-size:12px;padding:6px 16px">✓ Enregistrer &amp; charger</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('at-config-panel').remove()" style="font-size:12px;padding:6px 12px">Annuler</button>
+    </div>`;
+  document.body.appendChild(panel);
+  setTimeout(()=>document.getElementById('at-token-input')&&document.getElementById('at-token-input').focus(),100);
+}
+
+function saveAirtableConfig(){
+  const token=(document.getElementById('at-token-input')||{}).value||'';
+  const base=(document.getElementById('at-base-input')||{}).value||'';
+  if(!token || !base){notify('Token et Base ID requis','error');return;}
+  airtableState.token=token;airtableState.base=base;
+  localStorage.setItem('treso_at_token', token);
+  localStorage.setItem('treso_at_base', base);
+  const p=document.getElementById('at-config-panel');if(p)p.remove();
+  airtableLoadAll();
+}
+
+// -- Saisie rapide facture fournisseur (accessible depuis n'importe où) --
+function showFactureFournisseurPanel(){
+  const existing=document.getElementById('facture-panel');
+  if(existing){existing.remove();return;}
+  const panel=document.createElement('div');
+  panel.id='facture-panel';
+  panel.className='drive-config';
+  panel.style.cssText='position:fixed;top:70px;right:24px;z-index:150;width:420px;box-shadow:0 8px 32px rgba(0,0,0,.4)';
+  panel.innerHTML=`
+    <div class="drive-config-title">🧾 Saisie facture (fournisseur / client)</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Sens</label>
+      <div class="type-toggle">
+        <button type="button" class="type-btn ${ffFlux==='E'?'active-e':''}" onclick="setFfFlux('E')">↑ Entrée (facture client)</button>
+        <button type="button" class="type-btn ${ffFlux==='D'?'active-d':''}" onclick="setFfFlux('D')">↓ Sortie (facture fournisseur)</button>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Libellé</label>
+      <input type="text" id="ff-lib" placeholder="Ex : Facture Motul — pièces détachées" style="width:100%">
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div class="form-group" style="flex:1">
+        <label>${ffFlux==='E'?"Date de facturation":"Date de facture fournisseur"}</label>
+        <input type="date" id="ff-date" value="${todayStr()}" style="width:100%">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>${ffFlux==='E'?'Encaissement prévu':'Paiement prévu'}</label>
+        <input type="date" id="ff-date-enc" value="${todayStr()}" style="width:100%">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Montant (€ TTC)</label>
+        <input type="number" id="ff-amt" min="0" step="0.01" placeholder="0.00" style="width:100%">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div class="form-group" style="flex:1">
+        <label>Service</label>
+        <select id="ff-svc" style="width:100%">${SERVICES.filter(s=>s.code!=='CC').map(s=>`<option value="${s.code}" ${s.code===(ffFlux==='E'?'PRGO':'FG')?'selected':''}>${s.code}</option>`).join('')}</select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>TVA</label>
+        <select id="ff-tva" style="width:100%" onchange="document.getElementById('ff-tva-libre-group').style.display=(this.value==='libre')?'block':'none'">${TVA_RATES.map(r=>`<option value="${r.value}" ${r.value===20?'selected':''}>${r.label}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-group" id="ff-tva-libre-group" style="display:none;margin-bottom:12px">
+      <label>Montant TVA (€)</label>
+      <input type="number" id="ff-tva-libre" min="0" step="0.01" placeholder="0.00" style="width:100%">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>${ffFlux==='E'?'Client (optionnel)':'Bénéficiaire (optionnel)'}</label>
+      <select id="ff-benef" style="width:100%">
+        <option value="">— Aucun —</option>
+        ${collaborateurs.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+    </div>
+    <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;background:var(--cc-bg);padding:8px 10px;border-radius:var(--radius)">
+      <input type="checkbox" id="ff-cc" style="width:16px;height:16px">
+      <label for="ff-cc" style="font-size:12px;color:var(--cc);cursor:pointer">🏦 Mouvement Compte Courant (${ffFlux==='E'?'réinjection depuis':'retrait vers'} le compte de Carole) — compte dans le solde, exclu de la TVA</label>
+    </div>
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="ff-recurrent" style="width:16px;height:16px">
+      <label for="ff-recurrent" style="font-size:12px;color:var(--text);cursor:pointer">🔁 Récurrente tous les mois à la même date (classée dans Dettes &amp; Charges — récurrences)</label>
+    </div>
+    <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="ff-dette" onchange="document.getElementById('ff-dette-group').style.display=this.checked?'block':'none'" style="width:16px;height:16px">
+      <label for="ff-dette" style="font-size:12px;color:var(--text);cursor:pointer">💳 Il s'agit d'une dette à suivre (classée dans Dettes &amp; Charges — dettes)</label>
+    </div>
+    <div class="form-group" id="ff-dette-group" style="display:none;margin-bottom:14px;padding:10px;background:var(--surface2);border-radius:var(--radius)">
+      <div style="display:flex;gap:10px;margin-bottom:8px">
+        <div class="form-group" style="flex:1">
+          <label>Montant total de la dette (€)</label>
+          <input type="number" id="ff-dette-total" min="0" step="0.01" placeholder="laisser vide = montant de la facture">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Mensualité prévue (€)</label>
+          <input type="number" id="ff-dette-mens" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.5">Le montant de cette facture sera compté comme déjà réglé sur la dette. Le créancier reprend le champ "Bénéficiaire" ci-dessus.</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="submitFactureFournisseur()" style="font-size:12px;padding:6px 16px">✓ Enregistrer la facture</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('facture-panel').remove()" style="font-size:12px;padding:6px 12px">Annuler</button>
+    </div>`;
+  document.body.appendChild(panel);
+  setTimeout(()=>document.getElementById('ff-lib')&&document.getElementById('ff-lib').focus(),100);
+}
+let ffFlux='D';
+function setFfFlux(f){
+  ffFlux=f;
+  const existing=document.getElementById('facture-panel');
+  if(existing)existing.remove();
+  showFactureFournisseurPanel();
+}
+
+function submitFactureFournisseur(){
+  const lib=document.getElementById('ff-lib').value.trim();
+  const date=document.getElementById('ff-date').value;
+  const dateEncEl=document.getElementById('ff-date-enc');
+  const dateEncaissement=dateEncEl?dateEncEl.value:'';
+  const amt=parseFloat(document.getElementById('ff-amt').value);
+  const estCC=document.getElementById('ff-cc').checked;
+  const svc=estCC?'CC':document.getElementById('ff-svc').value;
+  const tauxRaw=document.getElementById('ff-tva').value;
+  const taux=(tauxRaw==='libre')?'libre':parseFloat(tauxRaw);
+  const montantTVAManuel=(tauxRaw==='libre')?parseFloat(document.getElementById('ff-tva-libre').value)||0:0;
+  const beneficiaire=document.getElementById('ff-benef').value;
+  const recurrent=document.getElementById('ff-recurrent').checked;
+  const estDette=document.getElementById('ff-dette').checked;
+  const libFinal=lib||(estCC?(ffFlux==='E'?'Réinjection depuis Compte Courant':'Retrait vers Compte Courant'):'');
+  if(!libFinal){notify('Libellé requis','error');return;}
+  if(!date){notify('Date requise','error');return;}
+  if(!amt||amt<=0){notify('Montant invalide','error');return;}
+  if(taux==='libre' && montantTVAManuel<=0){notify('Montant de TVA requis pour la saisie libre','error');return;}
+  const m=parseInt(date.split('-')[1],10);
+  const jour=date.split('-')[2];
+  if(!data[m])data[m]={};
+  if(!data[m][svc])data[m][svc]=[];
+  data[m][svc].push({id:Date.now().toString(36),date,dateEncaissement,libelle:libFinal,type:ffFlux,montant:amt,taux,montantTVAManuel,beneficiaire,
+    ordre:nextOrdre(),origine:recurrent?'Recurrent':'Manuel',chantierRef:''});
+
+  if(recurrent){
+    const moisKey=`2026-${String(m).padStart(2,'0')}`;
+    dcData.charges.push({
+      id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      nom:lib, organisme:beneficiaire||'', type:'mensuelle', montant:amt,
+      flux:ffFlux, service:svc,
+      notes:`Échéance habituelle : le ${jour} du mois`,
+      historique:[{mois:moisKey,paye:amt,date:date,dateEncaissement:dateEncaissement||''}]
+    });
+  }
+
+  if(estDette){
+    const totalInput=parseFloat(document.getElementById('ff-dette-total').value);
+    const mensInput=parseFloat(document.getElementById('ff-dette-mens').value)||0;
+    dcData.dettes.push({
+      id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      nom:lib, credancier:beneficiaire||'',
+      montantTotal:(totalInput&&totalInput>0)?totalInput:amt,
+      montantPaye:amt, mensualite:mensInput, dateDebut:date,
+      notes:`Créée depuis la saisie facture du ${date}`
+    });
+  }
+
+  const p=document.getElementById('facture-panel');if(p)p.remove();
+  updateBadges();render();
+  const extras=[recurrent?'ajoutée aux récurrences':'',estDette?'ajoutée aux dettes':''].filter(Boolean).join(' + ');
+  notify(extras
+    ?`Facture enregistrée dans ${MONTHS[m-1]} — ${svc} — ${fmt(amt)} — ${extras} de Dettes & Charges`
+    :`Facture enregistrée dans ${MONTHS[m-1]} — ${svc} — ${fmt(amt)}`,'success');
+}
+
+// -- Helpers REST génériques --
+async function atExtractError(res){
+  try{
+    const j=await res.json();
+    if(j && j.error){
+      const type=j.error.type||'';
+      const msg=j.error.message||'';
+      return `${res.status} ${type} — ${msg}`;
+    }
+  }catch(e){/* réponse non-JSON, on retombe sur le statut brut */}
+  return 'HTTP '+res.status;
+}
+async function atGetAll(table){
+  let records=[],offset;
+  do{
+    const url=`https://api.airtable.com/v0/${airtableState.base}/${encodeURIComponent(table)}${offset?'?offset='+offset:''}`;
+    const res=await fetch(url,{headers:{Authorization:'Bearer '+airtableState.token}});
+    if(!res.ok) throw new Error(table+' (lecture) : '+await atExtractError(res));
+    const j=await res.json();
+    records=records.concat(j.records||[]);
+    offset=j.offset;
+  }while(offset);
+  return records;
+}
+async function atDeleteAll(table, ids){
+  for(let i=0;i<ids.length;i+=10){
+    const chunk=ids.slice(i,i+10);
+    const qs=chunk.map(id=>'records[]='+encodeURIComponent(id)).join('&');
+    const res=await fetch(`https://api.airtable.com/v0/${airtableState.base}/${encodeURIComponent(table)}?${qs}`,
+      {method:'DELETE',headers:{Authorization:'Bearer '+airtableState.token}});
+    if(!res.ok) throw new Error(table+' (suppression) : '+await atExtractError(res));
+  }
+}
+async function atCreateAll(table, fieldsArray){
+  const created=[];
+  for(let i=0;i<fieldsArray.length;i+=10){
+    const chunk=fieldsArray.slice(i,i+10).map(f=>({fields:f}));
+    const res=await fetch(`https://api.airtable.com/v0/${airtableState.base}/${encodeURIComponent(table)}`,
+      {method:'POST',headers:{Authorization:'Bearer '+airtableState.token,'Content-Type':'application/json'},
+       body:JSON.stringify({records:chunk, typecast:true})});
+    if(!res.ok) throw new Error(table+' (écriture, lignes '+(i+1)+'-'+Math.min(i+10,fieldsArray.length)+'/'+fieldsArray.length+') : '+await atExtractError(res));
+    const j=await res.json();
+    created.push(...(j.records||[]));
+  }
+  return created;
+}
+
+// -- Chargement complet depuis Airtable --
+async function airtableLoadAll(){
+  if(!airtableState.token||!airtableState.base){atSetStatus('idle','Airtable non configuré');return;}
+  if(airtableState.syncing)return;
+  airtableState.syncing=true;
+  atSetStatus('warn','Chargement depuis Airtable...');
+  try{
+    for(let m=1;m<=12;m++){data[m]={};SERVICES.forEach(s=>data[m][s.code]=[]);}
+
+    const mouv=await atGetAll(AT_TABLES.mouvements);
+    mouv.forEach(r=>{
+      const f=r.fields,m=parseInt(f.Mois,10),svc=f.Service;
+      if(!m||!svc||!data[m]||!data[m][svc])return;
+      data[m][svc].push({id:r.id,date:f.Date||'',libelle:f.Libelle||'',type:f.Type||'E',
+        montant:parseFloat(f.Montant||0),
+        taux:(f.Taux==='libre')?'libre':((f.Taux===0||f.Taux)?parseFloat(f.Taux):20),
+        montantTVAManuel:parseFloat(f.MontantTVAManuel||0),dateEncaissement:f.DateEncaissementPrevue||'',
+        beneficiaire:f.Beneficiaire||'',verifieBanque:!!f.VerifieBanque,ordre:(f.Ordre||f.Ordre===0)?f.Ordre:nextOrdre(),origine:f.Origine||'Manuel',chantierRef:f.ChantierRef||''});
+    });
+    for(let mm=1;mm<=12;mm++)SERVICES.forEach(s=>(data[mm][s.code]||[]).forEach(op=>{if(op.ordre>__ordreSeq)__ordreSeq=op.ordre;}));
+
+    lsData.locataires=[];
+    const locs=await atGetAll(AT_TABLES.locataires);
+    locs.forEach(r=>{
+      const f=r.fields;
+      lsData.locataires.push({id:f.LocalId||r.id,nom:f.Nom||'',site:f.Site||'',
+        loyer15:parseFloat(f.Loyer15||0),loyer25:parseFloat(f.Loyer25||0),
+        dateEntree:f.DateEntree||'',dateSortie:f.DateSortie||'',actif:!!f.Actif,notes:f.Notes||''});
+    });
+
+    lsData.factures={};
+    const facs=await atGetAll(AT_TABLES.factures);
+    facs.forEach(r=>{
+      const f=r.fields,locId=f.LocataireId;if(!locId)return;
+      if(!lsData.factures[locId])lsData.factures[locId]={};
+      if(!lsData.factures[locId][f.MoisKey])lsData.factures[locId][f.MoisKey]=[];
+      lsData.factures[locId][f.MoisKey].push({echeance:parseInt(f.Echeance,10),
+        montant:parseFloat(f.Montant||0),statut:f.Statut||'pending',dateEncaissement:f.DateEncaissement||null});
+    });
+
+    dcData.dettes=[];
+    const dets=await atGetAll(AT_TABLES.dettes);
+    dets.forEach(r=>{
+      const f=r.fields;
+      dcData.dettes.push({id:r.id,nom:f.Nom||'',credancier:f.Creancier||'',
+        montantTotal:parseFloat(f.MontantTotal||0),montantPaye:parseFloat(f.MontantPaye||0),
+        mensualite:parseFloat(f.Mensualite||0),dateDebut:f.DateDebut||'',notes:f.Notes||''});
+    });
+
+    dcData.charges=[];
+    const chgs=await atGetAll(AT_TABLES.charges);
+    chgs.forEach(r=>{
+      const f=r.fields;let hist=[];
+      try{hist=JSON.parse(f.Historique||'[]');}catch(e){hist=[];}
+      dcData.charges.push({id:r.id,nom:f.Nom||'',type:f.Type||'mensuelle',
+        montant:parseFloat(f.Montant||0),organisme:f.Organisme||'',notes:f.Notes||'',
+        flux:f.Flux||'D',service:f.Service||'FG',historique:hist});
+    });
+
+    const collabRecords=await atGetAll(AT_TABLES.collaborateurs);
+    if(collabRecords.length>0){
+      collaborateurs=collabRecords.map(r=>r.fields.Nom).filter(Boolean);
+      saveCollaborateurs();
+    } else {
+      // Première utilisation : on envoie la liste locale par défaut vers Airtable
+      await atCreateAll(AT_TABLES.collaborateurs, collaborateurs.map(n=>({Nom:n})));
+    }
+
+    updateBadges();render();
+    atSetStatus('ok','Données chargées depuis Airtable',new Date().toLocaleTimeString('fr-FR'));
+    notify('Données Airtable chargées','success');
+  }catch(e){
+    atSetStatus('err','Erreur : '+e.message);
+    notify('Erreur Airtable : '+e.message,'error');
+  }
+  airtableState.syncing=false;
+}
+
+// -- Sauvegarde complète vers Airtable (purge + recréation de chaque table) --
+async function safeSyncTable(table, newFieldsArray){
+  // Sécurité anti-perte de données, en deux temps :
+  // 1) Si les données locales sont vides mais qu'Airtable contient déjà des enregistrements,
+  //    on REFUSE de synchroniser (ça éviterait sinon d'écraser de vraies données si le
+  //    chargement local a échoué ou est incomplet — cause probable de la remise à zéro).
+  // 2) Sinon, on crée d'abord les nouvelles lignes, et on ne supprime les anciennes
+  //    QUE si la création a réussi.
+  const existing = await atGetAll(table);
+  const existingIds = existing.map(r=>r.id);
+  if(newFieldsArray.length===0 && existingIds.length>0){
+    return {skipped:true, table};
+  }
+  if(newFieldsArray.length) await atCreateAll(table, newFieldsArray);
+  if(existingIds.length) await atDeleteAll(table, existingIds);
+  return {skipped:false, table};
+}
+
+async function airtableSaveAll(){
+  if(!airtableState.token||!airtableState.base){notify('Configure Airtable d\'abord (⚙ Airtable)','error');return;}
+  if(airtableState.syncing)return;
+  airtableState.syncing=true;
+  const btn=document.getElementById('btn-at-save');
+  if(btn)btn.innerHTML='<span class="sync-spinner"></span> Sauvegarde...';
+  atSetStatus('warn','Sauvegarde en cours...');
+  const skippedTables=[];
+  try{
+    let mouvFields=[];
+    for(let m=1;m<=12;m++)SERVICES.forEach(s=>(data[m][s.code]||[]).forEach(op=>{
+      mouvFields.push({Mois:m,Service:s.code,Date:op.date||'',Libelle:op.libelle||'',
+        Type:op.type,Montant:op.montant,Taux:String((op.taux===0||op.taux)?op.taux:20),
+        MontantTVAManuel:parseFloat(op.montantTVAManuel||0),DateEncaissementPrevue:op.dateEncaissement||null,
+        Beneficiaire:op.beneficiaire||'',VerifieBanque:!!op.verifieBanque,Ordre:op.ordre||0,Origine:op.origine||'Manuel',ChantierRef:op.chantierRef||''});
+    }));
+    let r=await safeSyncTable(AT_TABLES.mouvements, mouvFields);if(r.skipped)skippedTables.push('Mouvements');
+
+    const locFields=lsData.locataires.map(l=>({LocalId:l.id,Nom:l.nom,Site:l.site||'',
+      Loyer15:parseFloat(l.loyer15||0),Loyer25:parseFloat(l.loyer25||0),
+      DateEntree:l.dateEntree||null,DateSortie:l.dateSortie||null,Actif:!!l.actif,Notes:l.notes||''}));
+    r=await safeSyncTable(AT_TABLES.locataires, locFields);if(r.skipped)skippedTables.push('Locataires');
+
+    let facFields=[];
+    Object.keys(lsData.factures).forEach(locId=>{
+      Object.keys(lsData.factures[locId]).forEach(mKey=>{
+        (lsData.factures[locId][mKey]||[]).forEach(f=>{
+          facFields.push({LocataireId:locId,MoisKey:mKey,Echeance:f.echeance,
+            Montant:f.montant,Statut:f.statut,DateEncaissement:f.dateEncaissement||null});
+        });
+      });
+    });
+    r=await safeSyncTable(AT_TABLES.factures, facFields);if(r.skipped)skippedTables.push('Factures');
+
+    const detFields=dcData.dettes.map(d=>({Nom:d.nom,Creancier:d.credancier||'',
+      MontantTotal:parseFloat(d.montantTotal||0),MontantPaye:parseFloat(d.montantPaye||0),
+      Mensualite:parseFloat(d.mensualite||0),DateDebut:d.dateDebut||null,Notes:d.notes||''}));
+    r=await safeSyncTable(AT_TABLES.dettes, detFields);if(r.skipped)skippedTables.push('Dettes');
+
+    const chgFields=dcData.charges.map(c=>({Nom:c.nom,Type:c.type,Montant:parseFloat(c.montant||0),
+      Organisme:c.organisme||'',Notes:c.notes||'',Flux:c.flux||'D',Service:c.service||'FG',
+      Historique:JSON.stringify(c.historique||[])}));
+    r=await safeSyncTable(AT_TABLES.charges, chgFields);if(r.skipped)skippedTables.push('Charges');
+
+    const t=new Date().toLocaleTimeString('fr-FR');
+    if(skippedTables.length>0){
+      atSetStatus('warn',`Sauvegardé, mais ${skippedTables.join(', ')} ignoré(s) car vide(s) en local`,t);
+      notify(`⚠️ Protection anti-perte : ${skippedTables.join(', ')} n'a/ont pas été synchronisé(s) car vide(s) localement alors que des données existent sur Airtable. Recharge la page (🔄) avant de re-sauvegarder.`,'error');
+    } else {
+      // Vérification post-sauvegarde : on recompte réellement ce qu'il y a sur Airtable
+      // pour être sûr que la sauvegarde a vraiment abouti, plutôt que de faire confiance
+      // aveuglément à l'absence d'erreur.
+      atSetStatus('warn','Vérification de la sauvegarde...',t);
+      const verifMouv=await atGetAll(AT_TABLES.mouvements);
+      if(verifMouv.length!==mouvFields.length){
+        atSetStatus('err',`⚠️ Incohérence détectée : ${mouvFields.length} attendu(s) sur Mouvements, ${verifMouv.length} trouvé(s) sur Airtable`,t);
+        notify(`⚠️ La sauvegarde semble incomplète (${verifMouv.length}/${mouvFields.length} lignes sur Airtable). Ne quitte pas la page — recharge (🔄) et resauvegarde.`,'error');
+      } else {
+        atSetStatus('ok','Sauvegardé et vérifié sur Airtable',t);
+        notify(`Sauvegardé sur Airtable — vérifié (${verifMouv.length} opération(s) confirmée(s))`,'success');
+      }
+    }
+  }catch(e){
+    atSetStatus('err','Erreur sauvegarde (rien n\'a été supprimé) : '+e.message);
+    notify('Erreur : '+e.message+' — aucune donnée existante supprimée','error');
+  }
+  if(btn)btn.innerHTML='☁ Sauvegarder';
+  airtableState.syncing=false;
+}
+
+// -- Import automatique des acomptes/soldes depuis les chantiers acceptés --
+function chantierRefAlreadyImported(ref){
+  for(let m=1;m<=12;m++){
+    for(const s of SERVICES){
+      if((data[m][s.code]||[]).some(o=>o.chantierRef===ref)) return true;
+    }
+  }
+  return false;
+}
+async function syncChantiers(){
+  if(!airtableState.token||!airtableState.base){notify('Configure Airtable d\'abord (⚙ Airtable)','error');return;}
+  atSetStatus('warn','Synchronisation des chantiers...');
+  try{
+    const chantiers=await atGetAll(AT_TABLES.chantiers);
+    let added=0;
+    chantiers.forEach(r=>{
+      const f=r.fields;
+      const svc=(f.Region||'').toUpperCase().includes('LMPM')?'LMPM':'PRGO';
+      const entreprise=f.Entreprise||'Chantier';
+
+      if(f.Acompte && f.DateAcompte){
+        const ref=r.id+':acompte';
+        if(!chantierRefAlreadyImported(ref)){
+          const mm=parseInt((f.DateAcompte+'').split('-')[1],10);
+          if(mm>=1&&mm<=12){
+            if(!data[mm][svc])data[mm][svc]=[];
+            data[mm][svc].push({id:'new_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+              date:f.DateAcompte,libelle:`Acompte chantier — ${entreprise}`,type:'E',
+              montant:parseFloat(f.Acompte),ordre:nextOrdre(),origine:'Chantier',chantierRef:ref});
+            added++;
+          }
+        }
+      }
+      if(f.MontantFacture && f.DateFacture){
+        const ref=r.id+':solde';
+        if(!chantierRefAlreadyImported(ref)){
+          const mm=parseInt((f.DateFacture+'').split('-')[1],10);
+          if(mm>=1&&mm<=12){
+            if(!data[mm][svc])data[mm][svc]=[];
+            data[mm][svc].push({id:'new_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+              date:f.DateFacture,libelle:`Solde chantier — ${entreprise}`,type:'E',
+              montant:parseFloat(f.MontantFacture),ordre:nextOrdre(),origine:'Chantier',chantierRef:ref});
+            added++;
+          }
+        }
+      }
+    });
+    updateBadges();render();
+    atSetStatus('ok',(added>0?added+' échéance(s) chantier importée(s)':'Aucune nouvelle échéance chantier'),new Date().toLocaleTimeString('fr-FR'));
+    notify(added>0?`${added} échéance(s) chantier importée(s) — pense à cliquer ☁ Sauvegarder`:'Aucune nouvelle échéance chantier','success');
+  }catch(e){
+    atSetStatus('err','Erreur sync chantiers : '+e.message);
+    notify('Erreur : '+e.message,'error');
+  }
+}
+
+// Auto-sauvegarde toutes les 5 minutes si configuré
+setInterval(()=>{if(airtableState.token && airtableState.base && !airtableState.syncing) airtableSaveAll();}, 5*60*1000);
+
+// Chargement automatique au démarrage si déjà configuré
+window.addEventListener('load',()=>{
+  if(airtableState.token && airtableState.base){
+    setTimeout(airtableLoadAll, 300);
+  }
+});
+
+initNav();updateBadges();
+</script>
+</body>
+</html>
